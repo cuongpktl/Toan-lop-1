@@ -61,6 +61,9 @@ const ConnectMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
 
   const handleMove = (e: MouseEvent | TouchEvent) => {
     if (!dragStartPos || !containerRef.current) return;
+    // Ngăn chặn cuộn trang CHỈ KHI đang kéo đường nối
+    if (e.cancelable) e.preventDefault();
+    
     const pos = 'touches' in e ? e.touches[0] : e;
     const containerRect = containerRef.current.getBoundingClientRect();
     setCurrentMousePos({
@@ -92,9 +95,9 @@ const ConnectMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
 
   useEffect(() => {
     if (dragStartPos) {
-      window.addEventListener('mousemove', handleMove);
+      window.addEventListener('mousemove', handleMove, { passive: false });
       window.addEventListener('mouseup', handleEndDrag);
-      window.addEventListener('touchmove', handleMove);
+      window.addEventListener('touchmove', handleMove, { passive: false });
       window.addEventListener('touchend', handleEndDrag);
     } else {
       window.removeEventListener('mousemove', handleMove);
@@ -118,7 +121,7 @@ const ConnectMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
   };
 
   return (
-    <div ref={containerRef} className="relative flex flex-col items-center gap-8 p-6 sm:p-10 bg-white rounded-[48px] border-4 border-yellow-50 shadow-xl animate-fadeIn w-full max-w-3xl mx-auto touch-none select-none overflow-visible">
+    <div ref={containerRef} className="relative flex flex-col items-center gap-8 p-6 sm:p-10 bg-white rounded-[48px] border-4 border-yellow-50 shadow-xl animate-fadeIn w-full max-w-3xl mx-auto select-none overflow-visible">
       <div className="text-center space-y-2 pointer-events-none">
           <h3 className="text-2xl font-black text-yellow-600 uppercase tracking-tight">Nối Phép Tính Với Kết Quả</h3>
           <p className="text-gray-400 font-bold text-sm italic">Bé hãy dùng tay kéo từ chấm tròn vàng sang quả trứng đúng nhé!</p>
@@ -167,7 +170,7 @@ const ConnectMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
         )}
       </svg>
 
-      <div className="flex justify-between w-full gap-8 sm:gap-16 relative z-20">
+      <div className="flex justify-between w-full gap-4 sm:gap-16 relative z-20">
         {/* Cột trái: Phép tính (Thiết kế giống hình ảnh) */}
         <div className="flex flex-col gap-6 w-1/2">
           {left.map((item: any) => {
@@ -180,13 +183,13 @@ const ConnectMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
                 key={item.id}
                 onMouseDown={(e) => handleStartDrag(e, item.id)}
                 onTouchStart={(e) => handleStartDrag(e, item.id)}
-                className={`relative group flex items-center justify-center p-4 rounded-2xl border-4 transition-all h-20 text-xl font-black shadow-sm cursor-pointer
+                className={`relative group flex items-center justify-center p-2 sm:p-4 rounded-2xl border-4 transition-all h-20 text-lg sm:text-xl font-black shadow-sm cursor-pointer
                   ${isSelected ? 'border-yellow-500 bg-yellow-50' : 'bg-white border-blue-200'}
                   ${status === 'correct' ? 'border-green-400 bg-green-50 text-green-700' : ''}
                   ${status === 'wrong' ? 'border-red-400 bg-red-50 text-red-700' : ''}
                 `}
               >
-                {item.text}
+                <span className="truncate px-1">{item.text}</span>
                 
                 {/* Dấu chấm tròn vàng ở cạnh phải (Anchor Point) */}
                 <div 
@@ -214,7 +217,7 @@ const ConnectMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
                   ${dragStartPos ? 'scale-110' : ''}
                 `}
               >
-                <svg viewBox="0 0 80 100" className={`w-16 h-20 drop-shadow-md transition-all ${isMatchSelected ? 'scale-110' : ''}`}>
+                <svg viewBox="0 0 80 100" className={`w-14 h-18 sm:w-16 sm:h-20 drop-shadow-md transition-all ${isMatchSelected ? 'scale-110' : ''}`}>
                    <path 
                      d="M40 5 C20 5 5 40 5 65 C5 85 20 95 40 95 C60 95 75 85 75 65 C75 40 60 5 40 5 Z" 
                      fill={isMatchSelected ? "#fef3c7" : "white"} 
@@ -222,7 +225,7 @@ const ConnectMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
                      strokeWidth="4"
                    />
                 </svg>
-                <span className={`absolute font-black text-2xl pointer-events-none ${isMatchSelected ? 'text-yellow-700' : 'text-gray-600'}`}>
+                <span className={`absolute font-black text-xl sm:text-2xl pointer-events-none ${isMatchSelected ? 'text-yellow-700' : 'text-gray-600'}`}>
                   {item.text}
                 </span>
               </div>
@@ -238,7 +241,7 @@ const ConnectMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
              {Object.entries(targetAnswers).map(([id, val]: any) => {
                const leftText = left.find((l:any) => l.id === id)?.text;
                return (
-                 <div key={id} className="bg-white px-3 py-1 rounded-full border text-xs font-bold text-gray-600">
+                 <div key={id} className="bg-white px-3 py-1 rounded-full border text-[10px] sm:text-xs font-bold text-gray-600">
                     {leftText} = {val}
                  </div>
                );
