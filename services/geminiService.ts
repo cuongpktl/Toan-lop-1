@@ -5,11 +5,36 @@ import { MathProblem } from "../types";
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
 const LOCAL_WORD_PROBLEMS: MathProblem[] = [
-  { id: 'l1', type: 'word', question: "Nhà An có 4 con gà, mẹ mua thêm 5 con gà nữa. Hỏi nhà An có tất cả bao nhiêu con gà?", answer: 9, numbers: [4, 5], operators: ['+'] },
-  { id: 'l2', type: 'word', question: "Bình có 8 viên bi, Bình cho Nam 3 viên bi. Hỏi Bình còn lại bao nhiêu viên bi?", answer: 5, numbers: [8, 3], operators: ['-'] },
-  { id: 'l3', type: 'word', question: "Trong vườn có 4 cây cam và 4 cây bưởi. Hỏi trong vườn có tất cả bao nhiêu cây?", answer: 8, numbers: [4, 4], operators: ['+'] },
-  { id: 'l4', type: 'word', question: "Có 7 chú chim đậu trên cành, 3 chú bay đi. Hỏi còn lại bao nhiêu chú chim?", answer: 4, numbers: [7, 3], operators: ['-'] },
-  { id: 'l5', type: 'word', question: "Mẹ mua 10 quả cam, biếu bà 5 quả. Hỏi mẹ còn bao nhiêu quả cam?", answer: 5, numbers: [10, 5], operators: ['-'] }
+  { 
+    id: 'l1', 
+    type: 'word', 
+    isEquationStyle: true,
+    summaryLines: ["Có : 7 quả cam", "Ăn : 3 quả cam", "Còn lại: ....... quả cam?"],
+    question: "Bé hãy viết phép tính thích hợp để tìm số quả cam còn lại nhé!", 
+    answer: 4, 
+    numbers: [7, 3], 
+    operators: ['-'] 
+  },
+  { 
+    id: 'l2', 
+    type: 'word', 
+    isEquationStyle: true,
+    summaryLines: ["Có : 4 cái kẹo", "Thêm : 5 cái kẹo", "Tất cả: ....... cái kẹo?"],
+    question: "Bé hãy viết phép tính thích hợp để tìm tổng số cái kẹo nhé!", 
+    answer: 9, 
+    numbers: [4, 5], 
+    operators: ['+'] 
+  },
+  { 
+    id: 'l3', 
+    type: 'word', 
+    isEquationStyle: true,
+    summaryLines: ["Có : 6 con chim", "Bay đi : 2 con chim", "Còn lại: ....... con chim?"],
+    question: "Bé hãy viết phép tính thích hợp để tìm số con chim còn lại nhé!", 
+    answer: 4, 
+    numbers: [6, 2], 
+    operators: ['-'] 
+  }
 ];
 
 export const generateWordProblem = async (forcedOperator?: '+' | '-'): Promise<MathProblem> => {
@@ -21,26 +46,29 @@ export const generateWordProblem = async (forcedOperator?: '+' | '-'): Promise<M
 
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `Generate a simple math word problem for a 1st grade student (6-year-old) in Vietnamese. 
-      Strict Constraints: 
-      1. ${opInstruction}
-      2. All numbers mentioned in the text MUST be between 0 and 10.
-      3. The final answer MUST be between 0 and 10.
-      4. DO NOT generate problems where the sum or difference exceeds 10.
-      5. DO NOT generate negative results.
-      6. Context should be very simple: fruits, candies, animals, toys.
-      7. Keep the Vietnamese sentence structure simple and easy to read.`,
+      contents: `Generate a math word problem for a 1st/2nd grade student in Vietnamese in a specific "Summary" style.
+      
+      Format Requirements:
+      1. Use a "Summary" style with exactly 3 lines.
+         - Line 1: "Có : [number] [object]"
+         - Line 2: "[Action] : [number] [object]" (Action could be "Thêm", "Ăn", "Cho", "Bay đi", "Hái")
+         - Line 3: "[Target]: ....... [object]?" (Target could be "Tất cả", "Còn lại")
+      2. The question should ask the child to write the corresponding equation.
+      3. ${opInstruction}
+      4. All numbers MUST be between 0 and 10. Sum/Result MUST also be between 0 and 10.
+      5. Context: fruits, candies, animals, toys.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            question: { type: Type.STRING },
+            question: { type: Type.STRING, description: "Instruction like: Bé hãy viết phép tính thích hợp." },
+            summaryLines: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array of 3 summary lines." },
             answer: { type: Type.INTEGER },
             operation: { type: Type.STRING },
             numbers: { type: Type.ARRAY, items: { type: Type.INTEGER } }
           },
-          required: ["question", "answer", "operation"],
+          required: ["question", "summaryLines", "answer", "operation", "numbers"],
         },
       },
     });
@@ -49,6 +77,8 @@ export const generateWordProblem = async (forcedOperator?: '+' | '-'): Promise<M
     return {
       id: generateId(),
       type: 'word',
+      isEquationStyle: true,
+      summaryLines: data.summaryLines,
       question: data.question,
       answer: data.answer,
       numbers: data.numbers || [],

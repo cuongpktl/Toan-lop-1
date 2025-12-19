@@ -13,7 +13,7 @@ const Find100Game: React.FC = () => {
 
   const initGame = () => {
     audioService.play('click');
-    setProblems(generateFind10Problems(8));
+    setProblems(generateFind10Problems(10));
     setSelectedIds([]);
     setScore(0);
     setRevealed(false);
@@ -39,9 +39,6 @@ const Find100Game: React.FC = () => {
       const p = problems.find(prob => prob.id === id);
       if (p && p.isCorrect) {
         correctCount++;
-      } else if (p && !p.isCorrect) {
-        // Option: subtract for wrong choices? User didn't specify, 
-        // usually in kids apps we just count correct targets identified.
       }
     });
 
@@ -59,7 +56,6 @@ const Find100Game: React.FC = () => {
 
   const totalTargets = problems.filter(p => p.isCorrect).length;
   const calculatedScore10 = totalTargets > 0 ? (10 / totalTargets) * score : 0;
-  // Ensure score doesn't go negative if we add penalty (not currently added)
   const finalScore = Math.max(0, calculatedScore10);
   const displayScore = finalScore % 1 === 0 ? finalScore : finalScore.toFixed(1);
 
@@ -77,7 +73,7 @@ const Find100Game: React.FC = () => {
       <div className="flex flex-col sm:flex-row justify-between items-center mb-8 bg-white p-5 rounded-3xl shadow-sm border border-gray-100 gap-4">
         <div className="text-center sm:text-left">
             <h2 className="text-xl font-extrabold text-gray-800">Tìm Phép Tính = 10</h2>
-            <p className="text-gray-500 text-sm">Chỉ chọn những thẻ có tổng bằng 10</p>
+            <p className="text-gray-500 text-sm">Chỉ chọn những thẻ có tổng bằng 10 (10 thẻ)</p>
         </div>
         <div className="flex items-center gap-4">
             <button onClick={initGame} className="p-3 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-100">
@@ -86,7 +82,7 @@ const Find100Game: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {problems.map(p => {
             const isSelected = selectedIds.includes(p.id);
             const isCorrectTarget = p.isCorrect;
@@ -106,7 +102,7 @@ const Find100Game: React.FC = () => {
                 <button
                     key={p.id}
                     onClick={() => toggleSelect(p.id)}
-                    className={`h-24 sm:h-28 rounded-2xl border-2 flex items-center justify-center text-2xl font-black transition-all shadow-md active:scale-95 ${cardStyle}`}
+                    className={`h-24 sm:h-28 rounded-2xl border-2 flex items-center justify-center text-xl font-black transition-all shadow-md active:scale-95 ${cardStyle}`}
                 >
                     {p.numbers?.[0]} + {p.numbers?.[1]}
                 </button>

@@ -17,7 +17,9 @@ import {
   generateMultipleChoiceProblems,
   generateDecodeProblems,
   generateColoringProblems,
-  generateMazeProblems
+  generateMazeProblems,
+  generateConnectProblems,
+  generateHouseProblems
 } from './services/mathUtils';
 import VerticalMath from './components/VerticalMath';
 import ExpressionMath from './components/ExpressionMath';
@@ -32,6 +34,8 @@ import MultipleChoiceMath from './components/MultipleChoiceMath';
 import DecodeMath from './components/DecodeMath';
 import ColoringMath from './components/ColoringMath';
 import MazeMath from './components/MazeMath';
+import ConnectMath from './components/ConnectMath';
+import HouseMath from './components/HouseMath';
 import Find100Game from './components/Find100Game';
 import WordProblem from './components/WordProblem';
 import WordProblemItem from './components/WordProblemItem';
@@ -51,7 +55,8 @@ import {
   CompareIcon,
   KeyIcon,
   PaintIcon,
-  RouteIcon
+  RouteIcon,
+  HouseIcon,
 } from './components/icons';
 
 const ICON_MAP: Record<string, string> = {
@@ -63,6 +68,8 @@ const ICON_MAP: Record<string, string> = {
 
 const TABS: TabItem[] = [
   { id: 'practice', label: 'Luyện Tập', icon: <StarIcon />, color: 'bg-orange-400' },
+  { id: 'house', label: 'Ngôi Nhà', icon: <HouseIcon />, color: 'bg-indigo-400' },
+  { id: 'connect', label: 'Nối Kết', icon: <CompareIcon />, color: 'bg-yellow-600' },
   { id: 'maze', label: 'Mê Cung', icon: <RouteIcon />, color: 'bg-blue-600' },
   { id: 'coloring', label: 'Tô Màu', icon: <PaintIcon />, color: 'bg-pink-600' },
   { id: 'decode', label: 'Giải Mã', icon: <KeyIcon />, color: 'bg-purple-600' },
@@ -70,12 +77,12 @@ const TABS: TabItem[] = [
   { id: 'choice', label: 'Trắc Nghiệm', icon: <CheckCircleIcon />, color: 'bg-sky-600' },
   { id: 'pattern', label: 'Quy Luật', icon: <PatternIcon />, color: 'bg-teal-600' },
   { id: 'compare', label: 'So Sánh', icon: <CompareIcon />, color: 'bg-indigo-600' },
-  { id: 'geometry', label: 'Hình Học', icon: <ShapesIcon />, color: 'bg-teal-500' },
-  { id: 'measurement', label: 'Đo Lường', icon: <ScaleIcon />, color: 'bg-pink-500' },
   { id: 'vertical', label: 'Đặt Tính', icon: <LayersIcon />, color: 'bg-blue-500' },
-  { id: 'matching', label: 'Ghép Hình', icon: <PuzzleIcon />, color: 'bg-orange-500' },
   { id: 'cards', label: 'Thẻ Số', icon: <GridIcon />, color: 'bg-indigo-500' },
   { id: 'expression', label: 'Biểu Thức', icon: <CalculatorIcon />, color: 'bg-purple-500' },
+  { id: 'geometry', label: 'Hình Học', icon: <ShapesIcon />, color: 'bg-teal-500' },
+  { id: 'measurement', label: 'Đo Lường', icon: <ScaleIcon />, color: 'bg-pink-500' },
+  { id: 'matching', label: 'Ghép Hình', icon: <PuzzleIcon />, color: 'bg-orange-500' },
   { id: 'game', label: 'Tìm 10', icon: <CheckCircleIcon />, color: 'bg-green-500' },
   { id: 'challenge', label: 'Tìm hình', icon: <StarIcon fill="white" />, color: 'bg-rose-500' },
   { id: 'puzzle', label: 'Xếp Hình', icon: <GridIcon />, color: 'bg-sky-500' },
@@ -107,13 +114,15 @@ const App: React.FC = () => {
     else if (activeTab === 'geometry') setProblems(generateGeometryProblems(10));
     else if (activeTab === 'pattern') setProblems(generatePatternProblems(10));
     else if (activeTab === 'compare') setProblems(generateComparisonProblems(10));
-    else if (activeTab === 'practice') setProblems(generateMixedProblems(10));
+    else if (activeTab === 'practice') setProblems(generateMixedProblems(20));
     else if (activeTab === 'choice') setProblems(generateMultipleChoiceProblems(10));
     else if (activeTab === 'decode') setProblems(generateDecodeProblems(10));
     else if (activeTab === 'coloring') setProblems(generateColoringProblems(10));
-    else if (activeTab === 'maze') setProblems(generateMazeProblems(10)); // Khôi phục lên 10 bài
-    else if (activeTab === 'challenge') setProblems([generateChallengeProblem()]);
-    else if (activeTab === 'puzzle') setProblems([generatePuzzleProblem()]);
+    else if (activeTab === 'maze') setProblems(generateMazeProblems(10));
+    else if (activeTab === 'connect') setProblems(generateConnectProblems(10));
+    else if (activeTab === 'house') setProblems(generateHouseProblems(10));
+    else if (activeTab === 'challenge') setProblems(Array.from({ length: 10 }, () => generateChallengeProblem()));
+    else if (activeTab === 'puzzle') setProblems(Array.from({ length: 10 }, () => generatePuzzleProblem()));
     else setProblems([]);
   };
 
@@ -159,6 +168,40 @@ const App: React.FC = () => {
   };
 
   const isProblemCorrect = (p: MathProblem) => {
+    if (p.type === 'house') {
+        const userAns = p.userAnswer ? JSON.parse(p.userAnswer) : {};
+        const { sum, p1, p2 } = p.answer;
+        const targets = [
+            [p1, p2, sum], [p2, p1, sum], [sum, p1, p2], [sum, p2, p1]
+        ];
+        return targets.every((target, row) => {
+            return target.every((val, col) => {
+                return parseInt(userAns[`${row}-${col}`]) === val;
+            });
+        });
+    }
+    if (p.type === 'comparison' && p.visualType === 'missing_number') {
+        if (!p.userAnswer) return false;
+        const nums = [...(p.numbers || [])];
+        const hideIdx = p.visualData?.hideIdx;
+        const targetSign = p.visualData?.sign;
+        const ops = p.operators || ['+', '+'];
+        nums[hideIdx] = parseInt(p.userAnswer);
+        const lRes = ops[0] === '+' ? nums[0] + nums[1] : nums[0] - nums[1];
+        const rRes = ops[1] === '+' ? nums[2] + nums[3] : nums[2] - nums[3];
+        if (targetSign === '>') return lRes > rRes;
+        if (targetSign === '<') return lRes < rRes;
+        return lRes === rRes;
+    }
+    if (p.type === 'connect') {
+      const userConnections = p.userAnswer ? JSON.parse(p.userAnswer) : {};
+      const targetAnswers = p.answer || {};
+      const leftIds = p.visualData?.left?.map((l:any) => l.id) || [];
+      if (Object.keys(userConnections).length === 0) return false;
+      return leftIds.every((id: string) => {
+        return parseInt(userConnections[id]) === targetAnswers[id];
+      });
+    }
     if (p.type === 'maze') {
         const userAnswers = p.userAnswer ? JSON.parse(p.userAnswer) : {};
         const targetAnswers = p.answer || {};
@@ -166,6 +209,15 @@ const App: React.FC = () => {
         if (targetKeys.length === 0) return false;
         return targetKeys.every(coord => {
             return parseInt(userAnswers[coord]) === targetAnswers[coord];
+        });
+    }
+    if (p.visualType === 'chain') {
+        const userAnswers = p.userAnswer ? JSON.parse(p.userAnswer) : {};
+        const targetAnswers = p.answer || {};
+        const targetKeys = Object.keys(targetAnswers);
+        if (targetKeys.length === 0) return false;
+        return targetKeys.every(idx => {
+            return parseInt(userAnswers[idx]) === targetAnswers[idx];
         });
     }
     if (p.type === 'coloring') {
@@ -231,31 +283,31 @@ const App: React.FC = () => {
     if (activeTab === 'word') return <WordProblem />;
     if (activeTab === 'game') return <Find100Game />;
     if (activeTab === 'matching') return <MatchingGame />;
-
-    const isFullWidth = activeTab === 'challenge' || activeTab === 'puzzle' || activeTab === 'coloring' || activeTab === 'maze';
-    
+    const isFullWidth = activeTab === 'challenge' || activeTab === 'puzzle' || activeTab === 'coloring' || activeTab === 'maze' || activeTab === 'connect';
     return (
       <div className="max-w-4xl mx-auto animate-fadeIn px-2 sm:px-0 relative">
-        {activeTab === 'decode' && problems.length > 0 && problems[0]?.visualData?.legend && (
-           <div className="sticky top-[132px] sm:top-[144px] z-40 mb-10 p-4 sm:p-6 bg-purple-50/95 backdrop-blur-md rounded-[32px] border-4 border-purple-200 shadow-xl flex flex-col items-center gap-3 transition-all">
-              <span className="font-black text-purple-700 uppercase tracking-widest text-[10px] sm:text-xs">Bảng Quy Đổi Thần Kỳ</span>
-              <div className="flex flex-wrap justify-center gap-3 sm:gap-8">
-                 {Object.entries(problems[0].visualData.legend as Record<string, number>).map(([key, val]) => (
-                    <div key={key} className="flex items-center gap-2 bg-white px-3 py-2 rounded-2xl border-2 border-purple-100 shadow-sm">
-                       <span className="text-2xl sm:text-3xl">{ICON_MAP[key] || "🐾"}</span>
-                       <span className="text-lg sm:text-xl font-black text-purple-600">= {val}</span>
-                    </div>
-                 ))}
-              </div>
-           </div>
-        )}
-
         <div className={`flex flex-col gap-8 sm:gap-12`}>
             {problems.map((p, index) => (
                 <div key={p.id} className="relative pt-8 sm:pt-10">
                     <div className="absolute top-0 left-0 bg-blue-600 text-white px-5 py-1.5 rounded-br-2xl rounded-tl-xl font-black text-sm shadow-md z-10 flex items-center gap-2">
                         <span className="opacity-70">#</span> Câu {index + 1}
                     </div>
+
+                    {/* HIỂN THỊ BẢNG QUY ĐỔI CHO CÂU HỎI GIẢI MÃ (Tab Giải mã hoặc Luyện tập) */}
+                    {p.type === 'decode' && p.visualData?.legend && (
+                        <div className="mb-4 p-4 sm:p-6 bg-purple-50 rounded-[32px] border-4 border-purple-200 shadow-lg flex flex-col items-center gap-3 transition-all animate-fadeIn">
+                            <span className="font-black text-purple-700 uppercase tracking-widest text-[10px] sm:text-xs bg-white px-4 py-1 rounded-full shadow-sm">Bảng Quy Đổi Thần Kỳ</span>
+                            <div className="flex flex-wrap justify-center gap-3 sm:gap-8">
+                                {Object.entries(p.visualData.legend as Record<string, number>).map(([key, val]) => (
+                                    <div key={key} className="flex items-center gap-2 bg-white px-3 py-2 rounded-2xl border-2 border-purple-100 shadow-sm">
+                                        <span className="text-2xl sm:text-3xl">{ICON_MAP[key] || "🐾"}</span>
+                                        <span className="text-lg sm:text-xl font-black text-purple-600">= {val}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     <div className={`${isFullWidth ? 'w-full' : 'bg-white rounded-[32px] p-2 sm:p-4'}`}>
                         {p.type === 'fill_blank' && <FillBlankMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
                         {p.type === 'measurement' && <MeasurementMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
@@ -270,11 +322,12 @@ const App: React.FC = () => {
                         {p.type === 'decode' && <DecodeMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
                         {p.type === 'coloring' && <ColoringMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
                         {p.type === 'maze' && <MazeMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
+                        {p.type === 'connect' && <ConnectMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
+                        {p.type === 'house' && <HouseMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
                     </div>
                 </div>
             ))}
         </div>
-        
         {problems.length > 0 && (
           <div className="mt-12 flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-4 px-4 pb-10">
               <button onClick={handleRefresh} className="px-6 py-4 sm:py-3 rounded-2xl bg-white border-2 border-gray-200 hover:border-blue-300 text-gray-700 font-bold flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm">
@@ -288,7 +341,6 @@ const App: React.FC = () => {
       </div>
     );
   };
-
   return (
     <div className="min-h-screen bg-[#f8fafc] pb-10 flex flex-col">
       <header className="bg-white shadow-md sticky top-0 z-50">
@@ -307,7 +359,7 @@ const App: React.FC = () => {
                   </div>
                 )}
             </div>
-            <div className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100">Lớp 1 - Học kỳ 2</div>
+            <div className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100">Lớp 1 - Học kỳ 1</div>
         </div>
         <div className="scroll-container-mask border-t border-gray-50 bg-white">
             <div ref={scrollRef} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUpOrLeave} onMouseLeave={handleMouseUpOrLeave} className="overflow-x-auto no-scrollbar cursor-grab active:cursor-grabbing px-4 sm:px-10">
