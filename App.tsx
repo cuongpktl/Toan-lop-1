@@ -254,12 +254,7 @@ const App: React.FC = () => {
     if (p.type === 'challenge' || p.type === 'word' || p.type === 'comparison' || p.type === 'fill_blank' || p.type === 'multiple_choice' || p.type === 'decode') {
         return String(p.userAnswer) === String(p.answer) || (p.type !== 'word' && p.type !== 'multiple_choice' && parseInt(p.userAnswer || '') === p.answer);
     }
-    if (p.type === 'pattern') {
-        const userAnswers = p.userAnswer ? JSON.parse(p.userAnswer) : {};
-        const hiddenCells = (p.visualData?.hiddenCells as any[]) || [];
-        if (hiddenCells.length === 0) return String(p.userAnswer) === String(p.answer);
-        return hiddenCells.every(h => userAnswers[`${h.r}-${h.c}`] === h.target);
-    }
+    // Correct fix: Removed duplicate if (p.type === 'puzzle') block which caused a TypeScript error
     return parseInt(p.userAnswer || '') === p.answer;
   };
 
@@ -295,15 +290,17 @@ const App: React.FC = () => {
 
                     {/* HIỂN THỊ BẢNG QUY ĐỔI CHO CÂU HỎI GIẢI MÃ (Tab Giải mã hoặc Luyện tập) */}
                     {p.type === 'decode' && p.visualData?.legend && (
-                        <div className="mb-4 p-4 sm:p-6 bg-purple-50 rounded-[32px] border-4 border-purple-200 shadow-lg flex flex-col items-center gap-3 transition-all animate-fadeIn">
+                        <div className="mb-4 p-4 sm:p-6 bg-purple-50 rounded-[48px] border-4 border-purple-200 shadow-lg flex flex-col items-center gap-3 transition-all animate-fadeIn">
                             <span className="font-black text-purple-700 uppercase tracking-widest text-[10px] sm:text-xs bg-white px-4 py-1 rounded-full shadow-sm">Bảng Quy Đổi Thần Kỳ</span>
-                            <div className="flex flex-wrap justify-center gap-3 sm:gap-8">
-                                {Object.entries(p.visualData.legend as Record<string, number>).map(([key, val]) => (
-                                    <div key={key} className="flex items-center gap-2 bg-white px-3 py-2 rounded-2xl border-2 border-purple-100 shadow-sm">
-                                        <span className="text-2xl sm:text-3xl">{ICON_MAP[key] || "🐾"}</span>
-                                        <span className="text-lg sm:text-xl font-black text-purple-600">= {val}</span>
-                                    </div>
-                                ))}
+                            <div className="w-full overflow-x-auto no-scrollbar scroll-smooth py-2">
+                                <div className="flex flex-nowrap justify-start sm:justify-center gap-3 sm:gap-8 px-4 min-w-max mx-auto">
+                                    {Object.entries(p.visualData.legend as Record<string, number>).map(([key, val]) => (
+                                        <div key={key} className="flex items-center gap-2 bg-white px-3 py-2 rounded-2xl border-2 border-purple-100 shadow-sm shrink-0">
+                                            <span className="text-2xl sm:text-3xl">{ICON_MAP[key] || "🐾"}</span>
+                                            <span className="text-lg sm:text-xl font-black text-purple-600">= {val}</span>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     )}
