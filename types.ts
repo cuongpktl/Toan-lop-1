@@ -5,6 +5,7 @@ export interface MathProblem {
   id: string;
   type: 'word' | 'vertical' | 'expression' | 'find10' | 'fill_blank' | 'measurement' | 'geometry' | 'pattern' | 'challenge' | 'puzzle' | 'comparison' | 'multiple_choice' | 'decode' | 'coloring' | 'maze' | 'connect' | 'house';
   question?: string;
+  fullQuestion?: string; // Nội dung chi tiết bài toán
   numbers?: number[];
   operators?: string[];
   answer: any; // Can be number or string or array or object

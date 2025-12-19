@@ -40,20 +40,20 @@ const MeasurementMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => 
   if (problem.visualType === 'balance') {
     const weights = Array.isArray(problem.visualData) ? problem.visualData : [];
     return (
-      <div className="bg-orange-50 p-6 rounded-[32px] border-4 border-orange-100 flex flex-col items-center shadow-sm animate-fadeIn">
-        <h3 className="text-gray-700 font-black mb-6 w-full text-center">Con cá nặng bao nhiêu kg?</h3>
+      <div className="bg-orange-50 p-4 sm:p-6 rounded-[32px] border-4 border-orange-100 flex flex-col items-center shadow-sm animate-fadeIn w-full overflow-hidden">
+        <h3 className="text-gray-700 font-black mb-6 w-full text-center text-sm sm:text-base">Con cá nặng bao nhiêu kg?</h3>
         <div className="relative w-full max-w-[450px] h-56 mt-2">
           {/* Trụ cân */}
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[30px] border-l-transparent border-r-[30px] border-r-transparent border-b-[60px] border-b-gray-400"></div>
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[20px] sm:border-l-[30px] border-l-transparent border-r-[20px] sm:border-r-[30px] border-r-transparent border-b-[50px] sm:border-b-[60px] border-b-gray-400"></div>
           
           {/* Thanh cân */}
-          <div className="absolute bottom-[60px] left-0 w-full h-3 bg-gray-600 rounded-full shadow-sm"></div>
+          <div className="absolute bottom-[50px] sm:bottom-[60px] left-0 w-full h-2 sm:h-3 bg-gray-600 rounded-full shadow-sm"></div>
           
-          {/* Đĩa cân bên trái (Chứa con cá) */}
-          <div className="absolute bottom-[63px] left-0 w-52 h-2 bg-gray-400 origin-bottom flex justify-center">
-            <div className="absolute bottom-2 flex flex-col items-center">
-               {/* Hình con cá thực tế hơn */}
-               <svg width="140" height="85" viewBox="0 0 120 70" className="drop-shadow-lg">
+          {/* Đĩa cân bên trái (Chứa con cá) - Dùng w-[48%] thay cho w-52 để không đè lên nhau trên mobile */}
+          <div className="absolute bottom-[53px] sm:bottom-[63px] left-0 w-[48%] h-2 flex flex-col items-center">
+            <div className="absolute bottom-1 w-full flex flex-col items-center">
+               {/* Hình con cá thực tế hơn, dùng w-full max-w để co giãn */}
+               <svg viewBox="0 0 120 70" className="w-full max-w-[120px] h-auto drop-shadow-lg overflow-visible">
                   {/* Đuôi */}
                   <path d="M10 35 L 35 15 L 35 55 Z" fill="#3B82F6" stroke="#1D4ED8" strokeWidth="1" />
                   {/* Thân */}
@@ -69,24 +69,26 @@ const MeasurementMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => 
                   <path d="M50 25 Q 60 35 50 45" stroke="white" strokeWidth="2" fill="none" opacity="0.5"/>
                   <path d="M60 25 Q 70 35 60 45" stroke="white" strokeWidth="2" fill="none" opacity="0.3"/>
                </svg>
-               <div className="w-40 h-2.5 bg-gray-300 rounded-full mt-1"></div>
+               <div className="w-[85%] h-2 bg-gray-300 rounded-full mt-1"></div>
             </div>
           </div>
 
-          {/* Đĩa cân bên phải (Chứa quả cân) */}
-          <div className="absolute bottom-[63px] right-0 w-52 h-2 bg-gray-400 flex flex-col-reverse items-center justify-start pb-2 gap-2">
-            <div className="flex flex-wrap justify-center items-end gap-2 max-w-[180px]">
-              {weights.map((w, idx) => (
-                <div key={idx} className="relative flex flex-col items-center">
-                   {/* Hình dáng quả cân to hơn tương ứng với con cá */}
-                   <svg width="75" height="85" viewBox="0 0 45 50" className="drop-shadow-md">
-                      <path d="M15 5 Q 22.5 0 30 5 L 30 15 L 40 15 Q 45 15 45 20 L 45 45 Q 45 50 40 50 L 5 50 Q 0 50 0 45 L 0 20 Q 0 15 5 15 L 15 15 Z" fill="#D97706" stroke="#92400E" strokeWidth="1" />
-                      <text x="22.5" y="38" textAnchor="middle" fill="white" fontSize="15" fontWeight="900">{w}kg</text>
-                   </svg>
-                </div>
-              ))}
+          {/* Đĩa cân bên phải (Chứa quả cân) - Dùng w-[48%] thay cho w-52 */}
+          <div className="absolute bottom-[53px] sm:bottom-[63px] right-0 w-[48%] h-2 flex flex-col items-center">
+            <div className="absolute bottom-1 w-full flex flex-col items-center gap-1">
+              <div className="flex flex-wrap justify-center items-end gap-1 w-full">
+                {weights.map((w, idx) => (
+                  <div key={idx} className="relative flex flex-col items-center">
+                     {/* Hình dáng quả cân co giãn theo màn hình */}
+                     <svg viewBox="0 0 45 50" className="w-10 sm:w-14 h-auto drop-shadow-md overflow-visible">
+                        <path d="M15 5 Q 22.5 0 30 5 L 30 15 L 40 15 Q 45 15 45 20 L 45 45 Q 45 50 40 50 L 5 50 Q 0 50 0 45 L 0 20 Q 0 15 5 15 L 15 15 Z" fill="#D97706" stroke="#92400E" strokeWidth="1" />
+                        <text x="22.5" y="38" textAnchor="middle" fill="white" fontSize="15" fontWeight="900">{w}kg</text>
+                     </svg>
+                  </div>
+                ))}
+              </div>
+              <div className="w-[85%] h-2 bg-gray-300 rounded-full"></div>
             </div>
-            <div className="w-40 h-2.5 bg-gray-300 rounded-full"></div>
           </div>
         </div>
         <div className="mt-8 flex items-center gap-4">
