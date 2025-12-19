@@ -18,8 +18,39 @@
       ::-webkit-scrollbar-track { background: transparent; }
       ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
       ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+      
       .no-scrollbar::-webkit-scrollbar { display: none; }
-      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      .no-scrollbar { 
+        -ms-overflow-style: none; 
+        scrollbar-width: none; 
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      .scroll-container-mask {
+        position: relative;
+      }
+      .scroll-container-mask::after {
+        content: '';
+        position: absolute;
+        top: 0; right: 0; bottom: 0;
+        width: 40px;
+        background: gradient(linear, right top, left top, from(rgba(255,255,255,1)), to(rgba(255,255,255,0)));
+        background: linear-gradient(to left, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 100%);
+        pointer-events: none;
+        z-index: 10;
+      }
+      .scroll-container-mask::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; bottom: 0;
+        width: 40px;
+        background: gradient(linear, left top, right top, from(rgba(255,255,255,1)), to(rgba(255,255,255,0)));
+        background: linear-gradient(to right, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 100%);
+        pointer-events: none;
+        z-index: 10;
+      }
+
       .no-select { user-select: none; -webkit-user-select: none; }
       input[type=number]::-webkit-inner-spin-button, 
       input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }

@@ -21,13 +21,15 @@ export const generateWordProblem = async (forcedOperator?: '+' | '-'): Promise<M
 
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `Generate a math word problem for a 1st grade student in Vietnamese. 
-      Constraints: 
+      contents: `Generate a simple math word problem for a 1st grade student (6-year-old) in Vietnamese. 
+      Strict Constraints: 
       1. ${opInstruction}
-      2. All numbers used in the question MUST be between 0 and 10.
+      2. All numbers mentioned in the text MUST be between 0 and 10.
       3. The final answer MUST be between 0 and 10.
-      4. DO NOT generate negative results.
-      5. Engaging context suitable for children (animals, toys, fruits).`,
+      4. DO NOT generate problems where the sum or difference exceeds 10.
+      5. DO NOT generate negative results.
+      6. Context should be very simple: fruits, candies, animals, toys.
+      7. Keep the Vietnamese sentence structure simple and easy to read.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
