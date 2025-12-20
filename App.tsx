@@ -255,7 +255,6 @@ const App: React.FC = () => {
       return userOps.every((op: string, i: number) => op === targetOps[i]);
     }
     
-    // Xử lý linh hoạt cho các dạng toán so sánh chuỗi hoặc số (Đo lường, Hình học, Bài toán, Giải mã...)
     if (typeof p.answer === 'number') {
         return parseInt(user) === p.answer;
     } else if (typeof p.answer === 'string') {
@@ -287,23 +286,23 @@ const App: React.FC = () => {
     if (activeTab === 'matching') return <MatchingGame />;
     const isFullWidth = activeTab === 'challenge' || activeTab === 'puzzle' || activeTab === 'coloring' || activeTab === 'maze' || activeTab === 'connect';
     return (
-      <div className="max-w-4xl mx-auto animate-fadeIn px-2 sm:px-0 relative">
-        <div className={`flex flex-col gap-8 sm:gap-12`}>
+      <div className="max-w-4xl mx-auto animate-fadeIn px-1 sm:px-0 relative">
+        <div className={`flex flex-col gap-6 sm:gap-12`}>
             {problems.map((p, index) => (
-                <div key={p.id} className="relative pt-8 sm:pt-10">
-                    <div className="absolute top-0 left-0 bg-blue-600 text-white px-5 py-1.5 rounded-br-2xl rounded-tl-xl font-black text-sm shadow-md z-10 flex items-center gap-2">
+                <div key={p.id} className="relative pt-6 sm:pt-10">
+                    <div className="absolute top-0 left-0 bg-blue-600 text-white px-4 py-1.5 rounded-br-2xl rounded-tl-xl font-black text-[10px] sm:text-sm shadow-md z-10 flex items-center gap-2">
                         <span className="opacity-70">#</span> Câu {index + 1}
                     </div>
 
                     {p.type === 'decode' && p.visualData?.legend && (
-                        <div className="mb-4 p-4 sm:p-6 bg-purple-50 rounded-[48px] border-4 border-purple-200 shadow-lg flex flex-col items-center gap-3 transition-all animate-fadeIn">
-                            <span className="font-black text-purple-700 uppercase tracking-widest text-[10px] sm:text-xs bg-white px-4 py-1 rounded-full shadow-sm">Bảng Quy Đổi Thần Kỳ</span>
-                            <div className="w-full overflow-x-auto no-scrollbar scroll-smooth py-2">
-                                <div className="flex flex-nowrap justify-start sm:justify-center gap-3 sm:gap-8 px-4 min-w-max mx-auto">
+                        <div className="mb-4 p-3 sm:p-6 bg-purple-50 rounded-[24px] sm:rounded-[48px] border-2 sm:border-4 border-purple-200 shadow-lg flex flex-col items-center gap-2 sm:gap-3 transition-all animate-fadeIn w-full mx-auto">
+                            <span className="font-black text-purple-700 uppercase tracking-widest text-[8px] sm:text-xs bg-white px-3 py-0.5 rounded-full shadow-sm">Bảng Quy Đổi Thần Kỳ</span>
+                            <div className="w-full overflow-x-auto no-scrollbar scroll-smooth">
+                                <div className="flex flex-nowrap justify-start sm:justify-center gap-2 sm:gap-8 px-2 py-2 min-w-max mx-auto">
                                     {Object.entries(p.visualData.legend as Record<string, number>).map(([key, val]) => (
-                                        <div key={key} className="flex items-center gap-2 bg-white px-3 py-2 rounded-2xl border-2 border-purple-100 shadow-sm shrink-0">
-                                            <span className="text-2xl sm:text-3xl">{ICON_MAP[key] || "🐾"}</span>
-                                            <span className="text-lg sm:text-xl font-black text-purple-600">= {val}</span>
+                                        <div key={key} className="flex items-center gap-1 sm:gap-2 bg-white px-2 sm:px-3 py-1 sm:py-2 rounded-xl sm:rounded-2xl border border-purple-100 shadow-sm shrink-0">
+                                            <span className="text-xl sm:text-3xl">{ICON_MAP[key] || "🐾"}</span>
+                                            <span className="text-sm sm:text-xl font-black text-purple-600">= {val}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -311,7 +310,7 @@ const App: React.FC = () => {
                         </div>
                     )}
 
-                    <div className={`${isFullWidth ? 'w-full' : 'bg-white rounded-[32px] p-2 sm:p-4'}`}>
+                    <div className={`${isFullWidth ? 'w-full' : 'bg-white rounded-[24px] sm:rounded-[32px] p-1.5 sm:p-4'}`}>
                         {p.type === 'fill_blank' && <FillBlankMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
                         {p.type === 'measurement' && <MeasurementMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
                         {p.type === 'geometry' && <GeometryMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
@@ -332,7 +331,7 @@ const App: React.FC = () => {
             ))}
         </div>
         {problems.length > 0 && (
-          <div className="mt-12 flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-4 px-4 pb-10">
+          <div className="mt-12 flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-4 px-2 sm:px-4 pb-10">
               <button onClick={handleRefresh} className="px-6 py-4 sm:py-3 rounded-2xl bg-white border-2 border-gray-200 hover:border-blue-300 text-gray-700 font-bold flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm">
                   <RefreshIcon /> Làm Đề Khác
               </button>
@@ -347,36 +346,36 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#f8fafc] pb-10 flex flex-col">
       <header className="bg-white shadow-md sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
-            <div className="flex items-center gap-4 sm:gap-6 relative">
+        <div className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-4 flex justify-between items-center">
+            <div className="flex items-center gap-3 sm:gap-6 relative">
                 <div className="flex flex-col sm:flex-row sm:items-baseline">
-                    <h1 className="text-xl md:text-2xl font-black text-blue-600 uppercase tracking-tighter whitespace-nowrap">Toán lớp 1</h1>
-                    <span className="sm:ml-2 text-[10px] md:text-xs font-black text-gray-500 normal-case italic">Quang Minh 1A8</span>
+                    <h1 className="text-lg md:text-2xl font-black text-blue-600 uppercase tracking-tighter whitespace-nowrap">Toán lớp 1</h1>
+                    <span className="sm:ml-2 text-[8px] md:text-xs font-black text-gray-500 normal-case italic">Quang Minh 1A8</span>
                 </div>
                 {showResult && problems.length > 0 && (
                   <div className="animate-bounce-short">
-                    <div className="w-16 h-16 sm:w-24 sm:h-24 bg-white border-4 border-blue-600 rounded-full shadow-xl flex flex-col items-center justify-center">
-                      <span className="text-[10px] font-black text-gray-400 uppercase leading-none">Điểm</span>
-                      <span className="text-lg sm:text-2xl font-black text-red-600">{displayScore}</span>
+                    <div className="w-14 h-14 sm:w-24 sm:h-24 bg-white border-2 sm:border-4 border-blue-600 rounded-full shadow-xl flex flex-col items-center justify-center">
+                      <span className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase leading-none">Điểm</span>
+                      <span className="text-sm sm:text-2xl font-black text-red-600">{displayScore}</span>
                     </div>
                   </div>
                 )}
             </div>
-            <div className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100">Lớp 1 - Học kỳ 1</div>
+            <div className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-full border border-blue-100">Lớp 1 - Học kỳ 1</div>
         </div>
         <div className="scroll-container-mask border-t border-gray-50 bg-white">
-            <div ref={scrollRef} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUpOrLeave} onMouseLeave={handleMouseUpOrLeave} className="overflow-x-auto no-scrollbar cursor-grab active:cursor-grabbing px-4 sm:px-10">
-                <div className="max-w-5xl mx-auto flex space-x-2 py-3 min-w-max items-center">
+            <div ref={scrollRef} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUpOrLeave} onMouseLeave={handleMouseUpOrLeave} className="overflow-x-auto no-scrollbar cursor-grab active:cursor-grabbing px-2 sm:px-10">
+                <div className="max-w-5xl mx-auto flex space-x-1.5 py-2.5 min-w-max items-center">
                     {TABS.map(tab => (
-                        <button key={tab.id} onClick={() => handleTabChange(tab.id)} className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-sm transition-all duration-200 ${activeTab === tab.id ? `${tab.color} text-white shadow-lg shadow-${tab.color.split('-')[1]}-200 transform scale-105` : 'bg-gray-50 text-gray-500 hover:bg-gray-100 border border-transparent'}`}>
-                            <span className="scale-90">{tab.icon}</span> {tab.label}
+                        <button key={tab.id} onClick={() => handleTabChange(tab.id)} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl sm:rounded-2xl font-bold text-[11px] sm:text-sm transition-all duration-200 ${activeTab === tab.id ? `${tab.color} text-white shadow-lg shadow-${tab.color.split('-')[1]}-200 transform scale-105` : 'bg-gray-50 text-gray-500 hover:bg-gray-100 border border-transparent'}`}>
+                            <span className="scale-75 sm:scale-90">{tab.icon}</span> {tab.label}
                         </button>
                     ))}
                 </div>
             </div>
         </div>
       </header>
-      <main className="flex-1 w-full max-w-5xl mx-auto px-4 py-6 sm:py-10">{renderContent()}</main>
+      <main className="flex-1 w-full max-w-5xl mx-auto px-1 sm:px-4 py-4 sm:py-10">{renderContent()}</main>
     </div>
   );
 };
