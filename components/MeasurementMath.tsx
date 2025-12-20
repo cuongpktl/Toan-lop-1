@@ -9,7 +9,8 @@ interface Props {
 }
 
 const MeasurementMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
-  const isCorrect = showResult && parseInt(problem.userAnswer || '') === problem.answer;
+  const userVal = parseInt(problem.userAnswer || '');
+  const isCorrect = showResult && userVal === problem.answer;
   const isWrong = showResult && !isCorrect;
   
   const inputColor = showResult 
@@ -29,8 +30,8 @@ const MeasurementMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => 
       />
       <span className="text-lg font-black text-gray-400">{unit}</span>
       {isWrong && (
-        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-red-500 text-white px-3 py-1 rounded-full text-[10px] font-black shadow-lg z-20 whitespace-nowrap">
-          Đúng là: {problem.answer}
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-red-500 text-white px-3 py-1 rounded-full text-[10px] font-black shadow-lg z-20 whitespace-nowrap animate-bounce-short">
+          Đúng là: {problem.answer} {unit}
         </div>
       )}
     </div>
@@ -43,43 +44,28 @@ const MeasurementMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => 
       <div className="bg-orange-50 p-4 sm:p-6 rounded-[32px] border-4 border-orange-100 flex flex-col items-center shadow-sm animate-fadeIn w-full overflow-hidden">
         <h3 className="text-gray-700 font-black mb-6 w-full text-center text-sm sm:text-base">Con cá nặng bao nhiêu kg?</h3>
         <div className="relative w-full max-w-[450px] h-56 mt-2">
-          {/* Trụ cân */}
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[20px] sm:border-l-[30px] border-l-transparent border-r-[20px] sm:border-r-[30px] border-r-transparent border-b-[50px] sm:border-b-[60px] border-b-gray-400"></div>
-          
-          {/* Thanh cân */}
           <div className="absolute bottom-[50px] sm:bottom-[60px] left-0 w-full h-2 sm:h-3 bg-gray-600 rounded-full shadow-sm"></div>
-          
-          {/* Đĩa cân bên trái (Chứa con cá) - Dùng w-[48%] thay cho w-52 để không đè lên nhau trên mobile */}
           <div className="absolute bottom-[53px] sm:bottom-[63px] left-0 w-[48%] h-2 flex flex-col items-center">
             <div className="absolute bottom-1 w-full flex flex-col items-center">
-               {/* Hình con cá thực tế hơn, dùng w-full max-w để co giãn */}
                <svg viewBox="0 0 120 70" className="w-full max-w-[120px] h-auto drop-shadow-lg overflow-visible">
-                  {/* Đuôi */}
                   <path d="M10 35 L 35 15 L 35 55 Z" fill="#3B82F6" stroke="#1D4ED8" strokeWidth="1" />
-                  {/* Thân */}
                   <path d="M35 35 Q 35 0 75 0 Q 115 0 115 35 Q 115 70 75 70 Q 35 70 35 35 Z" fill="#60A5FA" stroke="#1D4ED8" strokeWidth="1" />
-                  {/* Vây lưng */}
                   <path d="M60 10 Q 75 -10 90 10" fill="#2563EB" stroke="#1D4ED8" strokeWidth="1" />
-                  {/* Vây bụng */}
                   <path d="M65 60 Q 75 75 85 60" fill="#2563EB" stroke="#1D4ED8" strokeWidth="1" />
-                  {/* Mắt */}
                   <circle cx="100" cy="25" r="5" fill="white" />
                   <circle cx="102" cy="25" r="2.5" fill="black" />
-                  {/* Mang/Vảy */}
                   <path d="M50 25 Q 60 35 50 45" stroke="white" strokeWidth="2" fill="none" opacity="0.5"/>
                   <path d="M60 25 Q 70 35 60 45" stroke="white" strokeWidth="2" fill="none" opacity="0.3"/>
                </svg>
                <div className="w-[85%] h-2 bg-gray-300 rounded-full mt-1"></div>
             </div>
           </div>
-
-          {/* Đĩa cân bên phải (Chứa quả cân) - Dùng w-[48%] thay cho w-52 */}
           <div className="absolute bottom-[53px] sm:bottom-[63px] right-0 w-[48%] h-2 flex flex-col items-center">
             <div className="absolute bottom-1 w-full flex flex-col items-center gap-1">
               <div className="flex flex-wrap justify-center items-end gap-1 w-full">
                 {weights.map((w, idx) => (
                   <div key={idx} className="relative flex flex-col items-center">
-                     {/* Hình dáng quả cân co giãn theo màn hình */}
                      <svg viewBox="0 0 45 50" className="w-10 sm:w-14 h-auto drop-shadow-md overflow-visible">
                         <path d="M15 5 Q 22.5 0 30 5 L 30 15 L 40 15 Q 45 15 45 20 L 45 45 Q 45 50 40 50 L 5 50 Q 0 50 0 45 L 0 20 Q 0 15 5 15 L 15 15 Z" fill="#D97706" stroke="#92400E" strokeWidth="1" />
                         <text x="22.5" y="38" textAnchor="middle" fill="white" fontSize="15" fontWeight="900">{w}kg</text>
@@ -100,7 +86,8 @@ const MeasurementMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => 
 
   // --- 2. Cân đồng hồ (Spring Scale) ---
   if (problem.visualType === 'spring') {
-    const weight = typeof problem.visualData === 'number' ? problem.visualData : 0;
+    // Luôn ưu tiên dùng problem.answer để đảm bảo logic hình ảnh khớp với đáp án kiểm tra
+    const weight = typeof problem.answer === 'number' ? problem.answer : 0;
     const rotation = weight * 36;
     
     return (
@@ -158,7 +145,8 @@ const MeasurementMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => 
 
   // --- 3. Bình chia độ (Beaker) ---
   if (problem.visualType === 'beaker') {
-    const level = typeof problem.visualData === 'number' ? problem.visualData : 0;
+    // Luôn ưu tiên dùng problem.answer để hình ảnh khớp tuyệt đối với đáp án
+    const level = typeof problem.answer === 'number' ? problem.answer : 0;
     const baseY = 180;
     const waterY = baseY - (level * 16);
     const waterHeight = level * 16;

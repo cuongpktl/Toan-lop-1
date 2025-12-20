@@ -296,9 +296,13 @@ export const generateMeasurementProblems = (count: number): MathProblem[] => {
       const w1 = getRandomInt(1, 4), w2 = getRandomInt(1, 10 - w1);
       problems.push({ id: generateId(), type: 'measurement', visualType: 'balance', visualData: [w1, w2], answer: w1 + w2, unit: 'kg' });
     } else if (vType === 'spring') {
-      problems.push({ id: generateId(), type: 'measurement', visualType: 'spring', visualData: getRandomInt(1, 10), answer: getRandomInt(1, 10), unit: 'kg' });
+      const val = getRandomInt(1, 10);
+      // visualData điều khiển kim cân, answer dùng để kiểm tra kết quả
+      problems.push({ id: generateId(), type: 'measurement', visualType: 'spring', visualData: val, answer: val, unit: 'kg' });
     } else if (vType === 'beaker') {
-      problems.push({ id: generateId(), type: 'measurement', visualType: 'beaker', visualData: getRandomInt(1, 10), answer: getRandomInt(1, 10), unit: 'l' });
+      const val = getRandomInt(1, 10);
+      // visualData điều khiển mực nước, answer dùng để kiểm tra kết quả
+      problems.push({ id: generateId(), type: 'measurement', visualType: 'beaker', visualData: val, answer: val, unit: 'l' });
     } else {
       const n1 = getRandomInt(1, 8), n2 = getRandomInt(1, 10 - n1);
       problems.push({ id: generateId(), type: 'measurement', visualType: 'calc', numbers: [n1, n2], operators: ['+'], answer: n1 + n2, unit: 'cm' });

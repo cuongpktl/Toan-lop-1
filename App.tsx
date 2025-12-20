@@ -168,6 +168,9 @@ const App: React.FC = () => {
   };
 
   const isProblemCorrect = (p: MathProblem) => {
+    const user = String(p.userAnswer || '').trim();
+    const target = String(p.answer || '').trim();
+
     if (p.type === 'house') {
         const userAns = p.userAnswer ? JSON.parse(p.userAnswer) : {};
         const { sum, p1, p2 } = p.answer;
@@ -181,12 +184,12 @@ const App: React.FC = () => {
         });
     }
     if (p.type === 'comparison' && p.visualType === 'missing_number') {
-        if (!p.userAnswer) return false;
+        if (!user) return false;
         const nums = [...(p.numbers || [])];
         const hideIdx = p.visualData?.hideIdx;
         const targetSign = p.visualData?.sign;
         const ops = p.operators || ['+', '+'];
-        nums[hideIdx] = parseInt(p.userAnswer);
+        nums[hideIdx] = parseInt(user);
         const lRes = ops[0] === '+' ? nums[0] + nums[1] : nums[0] - nums[1];
         const rRes = ops[1] === '+' ? nums[2] + nums[3] : nums[2] - nums[3];
         if (targetSign === '>') return lRes > rRes;
@@ -251,11 +254,15 @@ const App: React.FC = () => {
       const targetOps = p.answer ? JSON.parse(p.answer) : ['', ''];
       return userOps.every((op: string, i: number) => op === targetOps[i]);
     }
-    if (p.type === 'challenge' || p.type === 'word' || p.type === 'comparison' || p.type === 'fill_blank' || p.type === 'multiple_choice' || p.type === 'decode') {
-        return String(p.userAnswer) === String(p.answer) || (p.type !== 'word' && p.type !== 'multiple_choice' && parseInt(p.userAnswer || '') === p.answer);
+    
+    // Xử lý linh hoạt cho các dạng toán so sánh chuỗi hoặc số (Đo lường, Hình học, Bài toán, Giải mã...)
+    if (typeof p.answer === 'number') {
+        return parseInt(user) === p.answer;
+    } else if (typeof p.answer === 'string') {
+        return user.toLowerCase() === target.toLowerCase();
     }
-    // Correct fix: Removed duplicate if (p.type === 'puzzle') block which caused a TypeScript error
-    return parseInt(p.userAnswer || '') === p.answer;
+    
+    return parseInt(user) === p.answer;
   };
 
   const checkResults = () => {
@@ -288,7 +295,6 @@ const App: React.FC = () => {
                         <span className="opacity-70">#</span> Câu {index + 1}
                     </div>
 
-                    {/* HIỂN THỊ BẢNG QUY ĐỔI CHO CÂU HỎI GIẢI MÃ (Tab Giải mã hoặc Luyện tập) */}
                     {p.type === 'decode' && p.visualData?.legend && (
                         <div className="mb-4 p-4 sm:p-6 bg-purple-50 rounded-[48px] border-4 border-purple-200 shadow-lg flex flex-col items-center gap-3 transition-all animate-fadeIn">
                             <span className="font-black text-purple-700 uppercase tracking-widest text-[10px] sm:text-xs bg-white px-4 py-1 rounded-full shadow-sm">Bảng Quy Đổi Thần Kỳ</span>
