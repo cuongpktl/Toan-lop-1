@@ -478,23 +478,139 @@ export const generatePuzzleProblem = (): MathProblem => {
 };
 
 export const generateMixedProblems = (count: number): MathProblem[] => {
-  const problems: MathProblem[] = [];
-  const generators = [
+  // Danh sách các trình tạo bài tập cho từng dạng nhỏ cụ thể để đảm bảo tính duy nhất
+  // Fixed error: Added explicit type annotation (() => MathProblem)[] to avoid inference issues with the 'type' literal union.
+  const atomicGenerators: (() => MathProblem)[] = [
+    // Đặt tính
     () => generateVerticalProblems(1)[0],
-    () => generateExpressionProblems(1)[0],
-    () => generateFillBlankProblems(1)[0],
-    () => generateComparisonProblems(1)[0],
-    () => generateMultipleChoiceProblems(1)[0],
+    // Biểu thức
+    () => {
+      const op1 = Math.random() > 0.5 ? '+' : '-';
+      const op2 = Math.random() > 0.5 ? '+' : '-';
+      let n1: number, n2: number, n3: number, d: number;
+      let found = false;
+      while (!found) {
+        n1 = getRandomInt(0, 10); n2 = getRandomInt(0, 10); n3 = getRandomInt(0, 10);
+        const step1 = op1 === '+' ? n1 + n2 : n1 - n2;
+        if (step1 >= 0 && step1 <= 10) {
+          d = op2 === '+' ? step1 + n3 : step1 - n3;
+          if (d >= 0 && d <= 10) found = true;
+        }
+      }
+      return { id: generateId(), type: 'expression', visualType: 'calc', numbers: [n1!, n2!, n3!], operators: [op1, op2], answer: d! };
+    },
+    // Biểu thức ẩn số đầu
+    () => {
+      const op1 = Math.random() > 0.5 ? '+' : '-';
+      const op2 = Math.random() > 0.5 ? '+' : '-';
+      let n1: number, n2: number, n3: number, d: number;
+      let found = false;
+      while (!found) {
+        n1 = getRandomInt(0, 10); n2 = getRandomInt(0, 10); n3 = getRandomInt(0, 10);
+        const step1 = op1 === '+' ? n1 + n2 : n1 - n2;
+        if (step1 >= 0 && step1 <= 10) {
+          d = op2 === '+' ? step1 + n3 : step1 - n3;
+          if (d >= 0 && d <= 10) found = true;
+        }
+      }
+      return { id: generateId(), type: 'expression', visualType: 'missing_first', numbers: [n1!, n2!, n3!], operators: [op1, op2], answer: n1!, visualData: d! };
+    },
+    // Thẻ số - Sơ đồ chuỗi
+    () => generateChainProblem(),
+    // Thẻ số - Ô trống đơn
+    () => {
+      const op = Math.random() > 0.5 ? '+' : '-';
+      let n1, n2, res;
+      if (op === '+') { n1 = getRandomInt(0, 10); n2 = getRandomInt(0, 10 - n1); res = n1 + n2; }
+      else { n1 = getRandomInt(0, 10); n2 = getRandomInt(0, n1); res = n1 - n2; }
+      const hideIdx = getRandomInt(0, 2);
+      return { id: generateId(), type: 'fill_blank', numbers: [n1, n2], visualData: res, answer: hideIdx === 0 ? n1 : hideIdx === 1 ? n2 : res, operators: [op], options: [hideIdx] };
+    },
+    // Đo lường - Cân đĩa
+    () => {
+      const w1 = getRandomInt(1, 4), w2 = getRandomInt(1, 10 - w1);
+      return { id: generateId(), type: 'measurement', visualType: 'balance', visualData: [w1, w2], answer: w1 + w2, unit: 'kg' };
+    },
+    // Đo lường - Cân đồng hồ
+    () => {
+      const val = getRandomInt(1, 10);
+      return { id: generateId(), type: 'measurement', visualType: 'spring', visualData: val, answer: val, unit: 'kg' };
+    },
+    // Đo lường - Bình nước
+    () => {
+      const val = getRandomInt(1, 10);
+      return { id: generateId(), type: 'measurement', visualType: 'beaker', visualData: val, answer: val, unit: 'l' };
+    },
+    // Hình học - Đường gấp khúc
+    () => {
+      const l1 = getRandomInt(1, 4), l2 = getRandomInt(1, 3), l3 = getRandomInt(1, 3);
+      return { id: generateId(), type: 'geometry', visualType: 'path_length', question: "Tính độ dài đường gấp khúc (trong phạm vi 10) nhé!", visualData: [{ length: l1 }, { length: l2 }, { length: l3 }], answer: l1 + l2 + l3 };
+    },
+    // Hình học - Nhận dạng hình
+    () => {
+      const SHAPE_DEFS = [
+        { type: 'tri', name: 'hình Tam Giác', d: "M 50 10 L 90 90 L 10 90 Z" },
+        { type: 'sq', name: 'hình Vuông', d: "M 15 15 H 85 V 85 H 15 Z" },
+        { type: 'cir', name: 'hình Tròn', d: "M 50 10 A 40 40 0 1 1 50 90 A 40 40 0 1 1 50 10" },
+        { type: 'rect', name: 'hình Chữ Nhật', d: "M 10 30 H 90 V 70 H 10 Z" }
+      ];
+      const target = SHAPE_DEFS[getRandomInt(0, SHAPE_DEFS.length - 1)];
+      const displayShapes = Array.from({length: 8}, () => {
+        const chosen = SHAPE_DEFS[getRandomInt(0, SHAPE_DEFS.length - 1)];
+        return { id: generateId(), type: chosen.type as any, d: chosen.d, color: "#" + Math.floor(Math.random()*16777215).toString(16) };
+      });
+      return { id: generateId(), type: 'geometry', visualType: 'identify_shape', question: `Bé hãy chọn tất cả các ${target.name} nhé!`, visualData: { targetId: target.type, shapes: shuffleArray(displayShapes) }, answer: displayShapes.filter(s => s.type === target.type).length };
+    },
+    // Quy luật - Chuỗi hình
+    () => {
+      const SHAPES_LIB = {
+        square: { id: 'sq', d: "M 20 20 H 80 V 80 H 20 Z", color: "#3b82f6", name: "Hình vuông" },
+        circle: { id: 'cir', d: "M 50 10 A 40 40 0 1 1 50 90 A 40 40 0 1 1 50 10", color: "#f43f5e", name: "Hình tròn" },
+        triangle: { id: 'tri', d: "M 50 15 L 90 85 L 10 85 Z", color: "#fbbf24", name: "Hình tam giác" }
+      };
+      const unit = [SHAPES_LIB.square, SHAPES_LIB.circle, SHAPES_LIB.triangle, SHAPES_LIB.triangle];
+      const fullSequence = [...unit, ...unit, ...unit];
+      const hiddenIndex = getRandomInt(8, 10);
+      const targetShapeId = fullSequence[hiddenIndex].id;
+      return { id: generateId(), type: 'pattern', visualType: 'sequence', question: "Tìm hình thích hợp để đặt vào dấu '?'", visualData: { sequence: fullSequence, hiddenIndex, options: [SHAPES_LIB.square, SHAPES_LIB.circle, SHAPES_LIB.triangle] }, answer: targetShapeId };
+    },
+    // So sánh - Điền dấu
+    () => {
+      const op1 = Math.random() > 0.5 ? '+' : '-', op2 = Math.random() > 0.5 ? '+' : '-';
+      let n1, n2, lRes, n3, n4, rRes;
+      if (op1 === '+') { n1 = getRandomInt(1, 9); n2 = getRandomInt(0, 10 - n1); lRes = n1 + n2; } else { n1 = getRandomInt(1, 10); n2 = getRandomInt(0, n1); lRes = n1 - n2; }
+      if (op2 === '+') { n3 = getRandomInt(1, 9); n4 = getRandomInt(0, 10 - n3); rRes = n3 + n4; } else { n3 = getRandomInt(1, 10); n4 = getRandomInt(0, n3); rRes = n3 - n4; }
+      const sign = lRes > rRes ? '>' : lRes < rRes ? '<' : '=';
+      return { id: generateId(), type: 'comparison', numbers: [n1, n2, n3, n4], operators: [op1, op2], answer: sign };
+    },
+    // Trắc nghiệm - Đường ngắn nhất
+    () => generateShortestPathProblem(),
+    // Giải mã
     () => generateDecodeProblems(1)[0],
+    // Ngôi nhà phép tính
     () => generateHouseProblems(1)[0],
-    () => generateMeasurementProblems(1)[0],
-    () => generateGeometryProblems(1)[0],
+    // Mê cung
+    () => generateMazeProblems(1)[0],
+    // Nối kết
+    () => generateConnectProblems(1)[0],
+    // Tìm hình (Challenge)
+    () => generateChallengeProblem(),
+    // Xếp hình (Puzzle)
+    () => generatePuzzleProblem(),
+    // Tô màu
+    () => generateColoringProblems(1)[0]
   ];
 
+  // Trộn ngẫu nhiên danh sách các trình tạo
+  const shuffledGenerators = shuffleArray(atomicGenerators);
+
+  // Lấy ra số lượng yêu cầu, nếu số lượng yêu cầu nhiều hơn số dạng hiện có, ta sẽ lặp lại danh sách đã trộn
+  const problems: MathProblem[] = [];
   for (let i = 0; i < count; i++) {
-    const gen = generators[getRandomInt(0, generators.length - 1)];
-    problems.push(gen());
+    const genIndex = i % shuffledGenerators.length;
+    problems.push(shuffledGenerators[genIndex]());
   }
+
   return problems;
 };
 

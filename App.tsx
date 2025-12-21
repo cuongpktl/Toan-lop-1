@@ -87,7 +87,6 @@ const TABS: TabItem[] = [
   { id: 'puzzle', label: 'Xếp Hình', icon: <GridIcon />, color: 'bg-sky-500' },
 ];
 
-// Component bọc bài tập để tối ưu hóa render lại
 const ProblemWrapper = React.memo(({ p, showResult, onUpdate, index, isFullWidth }: any) => {
   return (
     <div data-problem-block="true" className="relative pt-6 sm:pt-10">
@@ -279,7 +278,6 @@ const App: React.FC = () => {
           const vStart = getVal(seg.start);
           const vMiddle = getVal(seg.middle);
           const vEnd = getVal(seg.end);
-          // Fixed typo: changed iNaN to isNaN
           if (isNaN(vStart) || isNaN(vMiddle) || isNaN(vEnd)) return false;
           return seg.op === '+' ? vStart + vMiddle === vEnd : vStart - vMiddle === vEnd;
         });
