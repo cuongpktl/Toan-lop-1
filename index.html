@@ -13,6 +13,8 @@
         background-color: #f0f9ff;
         -webkit-tap-highlight-color: transparent;
         touch-action: manipulation;
+        /* Ngăn chặn hiện tượng giật khi cuộn trên iOS */
+        -webkit-overflow-scrolling: touch;
       }
       ::-webkit-scrollbar { width: 8px; height: 6px; }
       ::-webkit-scrollbar-track { background: transparent; }
@@ -29,13 +31,13 @@
       
       .scroll-container-mask {
         position: relative;
+        will-change: transform;
       }
       .scroll-container-mask::after {
         content: '';
         position: absolute;
         top: 0; right: 0; bottom: 0;
         width: 40px;
-        background: gradient(linear, right top, left top, from(rgba(255,255,255,1)), to(rgba(255,255,255,0)));
         background: linear-gradient(to left, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 100%);
         pointer-events: none;
         z-index: 10;
@@ -45,7 +47,6 @@
         position: absolute;
         top: 0; left: 0; bottom: 0;
         width: 40px;
-        background: gradient(linear, left top, right top, from(rgba(255,255,255,1)), to(rgba(255,255,255,0)));
         background: linear-gradient(to right, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 100%);
         pointer-events: none;
         z-index: 10;
@@ -72,14 +73,19 @@
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
       }
-      .animate-fadeIn { animation: fadeIn 0.4s ease-out forwards; }
+      .animate-fadeIn { 
+        animation: fadeIn 0.4s ease-out forwards;
+        will-change: opacity, transform;
+      }
+
+      /* Tối ưu hóa hiệu năng render cho mobile */
+      [data-problem-block="true"] {
+        backface-visibility: hidden;
+        transform: translateZ(0);
+      }
     </style>
     <script>
-      window.process = {
-        env: {
-          API_KEY: ""
-        }
-      };
+      window.process = { env: { API_KEY: "" } };
     </script>
     <script type="importmap">
     {

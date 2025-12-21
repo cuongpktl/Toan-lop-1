@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { TabItem, MathProblem } from './types';
 import { audioService } from './services/audioService';
@@ -87,6 +87,51 @@ const TABS: TabItem[] = [
   { id: 'puzzle', label: 'Xếp Hình', icon: <GridIcon />, color: 'bg-sky-500' },
 ];
 
+// Component bọc bài tập để tối ưu hóa render lại
+const ProblemWrapper = React.memo(({ p, showResult, onUpdate, index, isFullWidth }: any) => {
+  return (
+    <div data-problem-block="true" className="relative pt-6 sm:pt-10">
+        <div className="absolute top-0 left-0 bg-blue-600 text-white px-4 py-1.5 rounded-br-2xl rounded-tl-xl font-black text-[10px] sm:text-sm shadow-md z-10 flex items-center gap-2">
+            <span className="opacity-70">#</span> Câu {index + 1}
+        </div>
+
+        {p.type === 'decode' && p.visualData?.legend && (
+            <div className="mb-4 p-3 sm:p-6 bg-purple-50 rounded-[24px] sm:rounded-[48px] border-2 sm:border-4 border-purple-200 shadow-lg flex flex-col items-center gap-2 sm:gap-3 transition-all animate-fadeIn w-full mx-auto">
+                <span className="font-black text-purple-700 uppercase tracking-widest text-[8px] sm:text-xs bg-white px-3 py-0.5 rounded-full shadow-sm">Bảng Quy Đổi Thần Kỳ</span>
+                <div className="w-full overflow-x-auto no-scrollbar scroll-smooth">
+                    <div className="flex flex-nowrap justify-start sm:justify-center gap-2 sm:gap-8 px-2 py-2 min-w-max mx-auto">
+                        {Object.entries(p.visualData.legend as Record<string, number>).map(([key, val]) => (
+                            <div key={key} className="flex items-center gap-1 sm:gap-2 bg-white px-2 sm:px-3 py-1 sm:py-2 rounded-xl sm:rounded-2xl border border-purple-100 shadow-sm shrink-0">
+                                <span className="text-xl sm:text-3xl">{ICON_MAP[key] || "🐾"}</span>
+                                <span className="text-sm sm:text-xl font-black text-purple-600">= {val}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        )}
+
+        <div className={`${isFullWidth ? 'w-full' : 'bg-white rounded-[24px] sm:rounded-[32px] p-1.5 sm:p-4'}`}>
+            {p.type === 'fill_blank' && <FillBlankMath problem={p} onUpdate={onUpdate} showResult={showResult} />}
+            {p.type === 'measurement' && <MeasurementMath problem={p} onUpdate={onUpdate} showResult={showResult} />}
+            {p.type === 'geometry' && <GeometryMath problem={p} onUpdate={onUpdate} showResult={showResult} />}
+            {p.type === 'pattern' && <PatternMath problem={p} onUpdate={onUpdate} showResult={showResult} />}
+            {p.type === 'challenge' && <ChallengeMath problem={p} onUpdate={onUpdate} showResult={showResult} />}
+            {p.type === 'puzzle' && <PuzzleMath problem={p} onUpdate={onUpdate} showResult={showResult} />}
+            {p.type === 'comparison' && <ComparisonMath problem={p} onUpdate={onUpdate} showResult={showResult} />}
+            {p.type === 'vertical' && <VerticalMath problem={p} onUpdate={onUpdate} showResult={showResult} />}
+            {p.type === 'expression' && <ExpressionMath problem={p} onUpdate={onUpdate} showResult={showResult} />}
+            {p.type === 'multiple_choice' && <MultipleChoiceMath problem={p} onUpdate={onUpdate} showResult={showResult} />}
+            {p.type === 'decode' && <DecodeMath problem={p} onUpdate={onUpdate} showResult={showResult} />}
+            {p.type === 'coloring' && <ColoringMath problem={p} onUpdate={onUpdate} showResult={showResult} />}
+            {p.type === 'maze' && <MazeMath problem={p} onUpdate={onUpdate} showResult={showResult} />}
+            {p.type === 'connect' && <ConnectMath problem={p} onUpdate={onUpdate} showResult={showResult} />}
+            {p.type === 'house' && <HouseMath problem={p} onUpdate={onUpdate} showResult={showResult} />}
+        </div>
+    </div>
+  );
+});
+
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('practice');
   const [tabsData, setTabsData] = useState<Record<string, { problems: MathProblem[], showResult: boolean }>>({});
@@ -96,13 +141,7 @@ const App: React.FC = () => {
   const startX = useRef(0);
   const scrollLeft = useRef(0);
 
-  useEffect(() => {
-    if (!tabsData[activeTab]) {
-      refreshData(activeTab);
-    }
-  }, [activeTab]);
-
-  const refreshData = (tabId: string) => {
+  const refreshData = useCallback((tabId: string) => {
     let newProblems: MathProblem[] = [];
     if (tabId === 'vertical') newProblems = generateVerticalProblems(10);
     else if (tabId === 'expression') newProblems = generateExpressionProblems(10);
@@ -125,21 +164,31 @@ const App: React.FC = () => {
       ...prev,
       [tabId]: { problems: newProblems, showResult: false }
     }));
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!tabsData[activeTab]) {
+      refreshData(activeTab);
+    }
+  }, [activeTab, refreshData, tabsData]);
 
   const currentTabInfo = tabsData[activeTab] || { problems: [], showResult: false };
   const problems = currentTabInfo.problems;
   const showResult = currentTabInfo.showResult;
 
-  const handleUpdateProblem = (id: string, val: string) => {
-    setTabsData(prev => ({
-      ...prev,
-      [activeTab]: {
-        ...prev[activeTab],
-        problems: prev[activeTab].problems.map(p => p.id === id ? { ...p, userAnswer: val } : p)
-      }
-    }));
-  };
+  const handleUpdateProblem = useCallback((id: string, val: string) => {
+    setTabsData(prev => {
+        const currentTab = prev[activeTab];
+        if (!currentTab) return prev;
+        return {
+            ...prev,
+            [activeTab]: {
+                ...currentTab,
+                problems: currentTab.problems.map(p => p.id === id ? { ...p, userAnswer: val } : p)
+            }
+        };
+    });
+  }, [activeTab]);
 
   const handleRefresh = () => {
     audioService.play('click');
@@ -176,10 +225,8 @@ const App: React.FC = () => {
     }
   };
 
-  const isProblemCorrect = (p: MathProblem) => {
+  const isProblemCorrect = useCallback((p: MathProblem) => {
     const user = String(p.userAnswer || '').trim();
-    
-    // 1. Ngôi nhà phép tính
     if (p.type === 'house') {
         const userAns = p.userAnswer ? JSON.parse(p.userAnswer) : {};
         const { sum, p1, p2 } = p.answer;
@@ -188,8 +235,6 @@ const App: React.FC = () => {
         const checkSub = (r: number[]) => !r.some(isNaN) && r[0]-r[1]===r[2] && r[0]===sum && ((r[1]===p1 && r[2]===p2)||(r[1]===p2 && r[2]===p1));
         return checkAdd(userRows[0]) && checkAdd(userRows[1]) && checkSub(userRows[2]) && checkSub(userRows[3]);
     }
-
-    // 2. So sánh (Dấu hoặc Điền số)
     if (p.type === 'comparison') {
         if (p.visualType === 'missing_number') {
             if (!user) return false;
@@ -204,10 +249,8 @@ const App: React.FC = () => {
             if (targetSign === '<') return lRes < rRes;
             return lRes === rRes;
         }
-        return user === p.answer; // So sánh dấu đơn thuần
+        return user === p.answer;
     }
-
-    // 3. Thẻ số (Sơ đồ chuỗi hoặc Ô trống đơn)
     if (p.type === 'fill_blank') {
         if (p.visualType === 'chain') {
             const userAnswers = p.userAnswer ? JSON.parse(p.userAnswer) : {};
@@ -217,21 +260,15 @@ const App: React.FC = () => {
         }
         return parseInt(user) === p.answer;
     }
-
-    // 4. Nối kết
     if (p.type === 'connect') {
       const userConnections = p.userAnswer ? JSON.parse(p.userAnswer) : {};
       const targetAnswers = p.answer || {};
       const leftIds = p.visualData?.left?.map((l:any) => l.id) || [];
       return leftIds.length > 0 && leftIds.every((id: string) => parseInt(userConnections[id]) === targetAnswers[id]);
     }
-
-    // 5. Mê cung (Chấm điểm linh hoạt theo từng đoạn phép tính)
     if (p.type === 'maze') {
         const userAnswers = p.userAnswer ? JSON.parse(p.userAnswer) : {};
         const { grid = {}, segments = [] } = p.visualData || {};
-        
-        // Kiểm tra xem tất cả các đoạn có đúng phép toán không
         return segments.length > 0 && segments.every((seg: any) => {
           const getVal = (coord: string) => {
             const cell = grid[coord];
@@ -239,41 +276,27 @@ const App: React.FC = () => {
             const uVal = userAnswers[coord];
             return uVal === "" || uVal === undefined ? NaN : parseInt(uVal);
           };
-
           const vStart = getVal(seg.start);
           const vMiddle = getVal(seg.middle);
           const vEnd = getVal(seg.end);
-
+          // Fixed typo: changed iNaN to isNaN
           if (isNaN(vStart) || isNaN(vMiddle) || isNaN(vEnd)) return false;
-          
-          return seg.op === '+' 
-            ? vStart + vMiddle === vEnd 
-            : vStart - vMiddle === vEnd;
+          return seg.op === '+' ? vStart + vMiddle === vEnd : vStart - vMiddle === vEnd;
         });
     }
-
-    // 6. Hình học (Nhận dạng hình)
     if (p.type === 'geometry' && p.visualType === 'identify_shape') {
       const userSelected = p.userAnswer ? JSON.parse(p.userAnswer) : [];
       const targetIds = p.visualData?.shapes?.filter((s: any) => s.type === p.visualData?.targetId).map((s: any) => s.id) || [];
       return targetIds.length === userSelected.length && targetIds.every((id: string) => userSelected.includes(id));
     }
-
-    // 7. Quy luật (Dạng JSON lưu trữ lựa chọn)
     if (p.type === 'pattern') {
         const userAnswers = p.userAnswer ? JSON.parse(p.userAnswer) : {};
         const hiddenIndex = p.visualData?.hiddenIndex;
         return userAnswers[`idx-${hiddenIndex}`] === p.answer;
     }
-
-    // 8. Trắc nghiệm
-    if (p.type === 'multiple_choice') {
-        return user === String(p.answer);
-    }
-
-    // 9. Mặc định (Các phép tính đơn lẻ)
+    if (p.type === 'multiple_choice') return user === String(p.answer);
     return parseInt(user) === p.answer;
-  };
+  }, []);
 
   const checkResults = () => {
     if (showResult) {
@@ -290,7 +313,7 @@ const App: React.FC = () => {
     setTabsData(prev => ({ ...prev, [activeTab]: { ...prev[activeTab], showResult: true } }));
   };
 
-  const scoreCount = problems.filter(isProblemCorrect).length;
+  const scoreCount = useMemo(() => problems.filter(isProblemCorrect).length, [problems, isProblemCorrect]);
   const calculatedScore10 = problems.length > 0 ? (10 / problems.length) * scoreCount : 0;
   const displayScore = calculatedScore10 % 1 === 0 ? calculatedScore10 : calculatedScore10.toFixed(1);
 
@@ -303,45 +326,14 @@ const App: React.FC = () => {
       <div className="max-w-4xl mx-auto animate-fadeIn px-1 sm:px-0 relative">
         <div className="flex flex-col gap-6 sm:gap-12">
             {problems.map((p, index) => (
-                <div key={p.id} data-problem-block="true" className="relative pt-6 sm:pt-10">
-                    <div className="absolute top-0 left-0 bg-blue-600 text-white px-4 py-1.5 rounded-br-2xl rounded-tl-xl font-black text-[10px] sm:text-sm shadow-md z-10 flex items-center gap-2">
-                        <span className="opacity-70">#</span> Câu {index + 1}
-                    </div>
-
-                    {p.type === 'decode' && p.visualData?.legend && (
-                        <div className="mb-4 p-3 sm:p-6 bg-purple-50 rounded-[24px] sm:rounded-[48px] border-2 sm:border-4 border-purple-200 shadow-lg flex flex-col items-center gap-2 sm:gap-3 transition-all animate-fadeIn w-full mx-auto">
-                            <span className="font-black text-purple-700 uppercase tracking-widest text-[8px] sm:text-xs bg-white px-3 py-0.5 rounded-full shadow-sm">Bảng Quy Đổi Thần Kỳ</span>
-                            <div className="w-full overflow-x-auto no-scrollbar scroll-smooth">
-                                <div className="flex flex-nowrap justify-start sm:justify-center gap-2 sm:gap-8 px-2 py-2 min-w-max mx-auto">
-                                    {Object.entries(p.visualData.legend as Record<string, number>).map(([key, val]) => (
-                                        <div key={key} className="flex items-center gap-1 sm:gap-2 bg-white px-2 sm:px-3 py-1 sm:py-2 rounded-xl sm:rounded-2xl border border-purple-100 shadow-sm shrink-0">
-                                            <span className="text-xl sm:text-3xl">{ICON_MAP[key] || "🐾"}</span>
-                                            <span className="text-sm sm:text-xl font-black text-purple-600">= {val}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    <div className={`${isFullWidth ? 'w-full' : 'bg-white rounded-[24px] sm:rounded-[32px] p-1.5 sm:p-4'}`}>
-                        {p.type === 'fill_blank' && <FillBlankMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
-                        {p.type === 'measurement' && <MeasurementMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
-                        {p.type === 'geometry' && <GeometryMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
-                        {p.type === 'pattern' && <PatternMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
-                        {p.type === 'challenge' && <ChallengeMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
-                        {p.type === 'puzzle' && <PuzzleMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
-                        {p.type === 'comparison' && <ComparisonMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
-                        {p.type === 'vertical' && <VerticalMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
-                        {p.type === 'expression' && <ExpressionMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
-                        {p.type === 'multiple_choice' && <MultipleChoiceMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
-                        {p.type === 'decode' && <DecodeMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
-                        {p.type === 'coloring' && <ColoringMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
-                        {p.type === 'maze' && <MazeMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
-                        {p.type === 'connect' && <ConnectMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
-                        {p.type === 'house' && <HouseMath problem={p} onUpdate={(val) => handleUpdateProblem(p.id, val)} showResult={showResult} />}
-                    </div>
-                </div>
+                <ProblemWrapper 
+                    key={p.id} 
+                    p={p} 
+                    index={index} 
+                    showResult={showResult} 
+                    onUpdate={(val: string) => handleUpdateProblem(p.id, val)}
+                    isFullWidth={isFullWidth}
+                />
             ))}
         </div>
         {problems.length > 0 && (
@@ -357,6 +349,7 @@ const App: React.FC = () => {
       </div>
     );
   };
+
   return (
     <div className="min-h-screen bg-[#f8fafc] pb-10 flex flex-col">
       <header className="bg-white shadow-md sticky top-0 z-50">
