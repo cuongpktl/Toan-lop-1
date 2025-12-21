@@ -35,32 +35,83 @@ const GeometryMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
 
   if (problem.visualType === 'identify_shape') {
       const visualData = problem.visualData || {};
-      const { shapes = [] } = visualData;
-      const userSelected = problem.userAnswer ? JSON.parse(problem.userAnswer) : [];
+      const { shapes = [], targetId = '' } = visualData;
+      const userSelected: string[] = problem.userAnswer ? JSON.parse(problem.userAnswer) : [];
+      
+      const targetIds = shapes.filter((s: any) => s.type === targetId).map((s: any) => s.id);
+      const missingCount = targetIds.filter((id: string) => !userSelected.includes(id)).length;
+      const extraCount = userSelected.filter((id: string) => !targetIds.includes(id)).length;
+      const isPerfect = userSelected.length > 0 && missingCount === 0 && extraCount === 0;
+
+      // Tìm tên hình mục tiêu để hiển thị trong chú thích
+      const targetName = problem.question?.toLowerCase().includes("tam giác") ? "hình Tam Giác" :
+                         problem.question?.toLowerCase().includes("vuông") ? "hình Vuông" :
+                         problem.question?.toLowerCase().includes("tròn") ? "hình Tròn" : "hình Chữ Nhật";
 
       return (
-          <div className="p-6 rounded-3xl border-4 border-white bg-white shadow-xl flex flex-col items-center w-full">
+          <div className={`p-6 rounded-[32px] border-4 transition-all flex flex-col items-center w-full ${
+              showResult ? (isPerfect ? 'border-green-400 bg-green-50' : 'border-red-400 bg-red-50') : 'border-white bg-white shadow-xl'
+          }`}>
               <h3 className="text-xl font-black text-gray-800 mb-8 text-center uppercase">{problem.question}</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-                  {shapes.map((shape: any) => (
-                    <div key={shape.id} onClick={() => toggleShape(shape.id)} className={`relative transition-all cursor-pointer p-4 rounded-3xl border-4 flex flex-col items-center justify-center w-32 h-32 ${userSelected.includes(shape.id) ? 'border-orange-400 bg-orange-50' : 'border-transparent bg-gray-50'}`}>
-                        <svg width="100%" height="100%" viewBox="0 0 100 100">
-                            <path d={shape.d} fill={shape.color} stroke="#334155" strokeWidth="3" />
-                        </svg>
-                    </div>
-                  ))}
+              
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-8">
+                  {shapes.map((shape: any) => {
+                    const isSelected = userSelected.includes(shape.id);
+                    const isTarget = shape.type === targetId;
+                    
+                    let statusClass = "border-transparent bg-gray-50";
+                    if (showResult) {
+                        if (isSelected && isTarget) statusClass = "border-green-500 bg-green-100 ring-4 ring-green-50";
+                        else if (isSelected && !isTarget) statusClass = "border-red-500 bg-red-100 animate-shake";
+                        else if (!isSelected && isTarget) statusClass = "border-green-300 border-dashed bg-white opacity-60";
+                    } else {
+                        if (isSelected) statusClass = "border-blue-500 bg-blue-50 ring-4 ring-blue-100 scale-105 shadow-md";
+                    }
+
+                    return (
+                        <div 
+                            key={shape.id} 
+                            onClick={() => toggleShape(shape.id)} 
+                            className={`relative transition-all cursor-pointer p-4 rounded-3xl border-4 flex flex-col items-center justify-center w-32 h-32 ${statusClass}`}
+                        >
+                            <svg width="100%" height="100%" viewBox="0 0 100 100">
+                                <path d={shape.d} fill={shape.color} stroke="#334155" strokeWidth="3" />
+                            </svg>
+                            {showResult && isSelected && !isTarget && (
+                                <div className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-[10px] font-black shadow-lg">✕</div>
+                            )}
+                            {showResult && isSelected && isTarget && (
+                                <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-[10px] font-black shadow-lg">✓</div>
+                            )}
+                        </div>
+                    );
+                  })}
               </div>
+
+              {/* Chú thích lỗi sai hoặc khen ngợi */}
+              {showResult && (
+                  <div className={`px-6 py-3 rounded-2xl font-bold text-sm sm:text-base animate-fadeIn ${isPerfect ? 'text-green-700 bg-green-100' : 'text-red-700 bg-red-100'}`}>
+                      {isPerfect ? (
+                          <span>🌟 Bé thật giỏi! Bé đã chọn đúng tất cả {targetIds.length} {targetName}.</span>
+                      ) : (
+                          <div className="flex flex-col items-center gap-1">
+                              <span className="font-black">💡 Bé xem lại nhé:</span>
+                              {extraCount > 0 && <span>• Bé đã chọn nhầm {extraCount} hình khác rồi.</span>}
+                              {missingCount > 0 && <span>• Bé vẫn còn thiếu {missingCount} {targetName} nữa đấy.</span>}
+                              <span className="text-xs opacity-80 mt-1">(Các hình có viền xanh lá là đáp án đúng)</span>
+                          </div>
+                      )}
+                  </div>
+              )}
           </div>
       )
   }
 
   if (problem.visualType === 'path_length') {
       const segments = Array.isArray(problem.visualData) ? problem.visualData : [];
-      
-      // Tính toán tọa độ các điểm cho đường gấp khúc
       const points: {x: number, y: number}[] = [{x: 20, y: 80}];
-      const angles = [0, -45, 10]; // Các góc nghiêng cố định để tạo hình đường gấp khúc
-      const scale = 35; // Tỉ lệ vẽ
+      const angles = [0, -45, 10]; 
+      const scale = 35;
 
       segments.forEach((s, i) => {
           const prev = points[i];
@@ -75,10 +126,8 @@ const GeometryMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
           <div className={`p-6 rounded-[32px] border-4 flex flex-col items-center justify-center bg-white shadow-xl w-full ${isCorrect ? 'border-green-400 bg-green-50' : isWrong ? 'border-red-400 bg-red-50' : 'border-teal-100'}`}>
                <h3 className="text-xl font-black text-gray-800 mb-4 text-center">{problem.question}</h3>
                
-               {/* Phần vẽ đường gấp khúc SVG */}
                <div className="w-full max-w-[400px] bg-slate-50 rounded-2xl mb-6 p-4">
                     <svg viewBox="0 0 400 120" className="w-full h-auto overflow-visible">
-                        {/* Vẽ các đoạn thẳng */}
                         {segments.map((s, i) => (
                             <g key={i}>
                                 <line 
@@ -86,7 +135,6 @@ const GeometryMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
                                     x2={points[i+1].x} y2={points[i+1].y} 
                                     stroke="#0d9488" strokeWidth="6" strokeLinecap="round" 
                                 />
-                                {/* Nhãn độ dài cm */}
                                 <text 
                                     x={(points[i].x + points[i+1].x) / 2} 
                                     y={(points[i].y + points[i+1].y) / 2 - 15} 
@@ -95,7 +143,6 @@ const GeometryMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
                                 >
                                     {s.length}cm
                                 </text>
-                                {/* Chấm tròn tại các điểm nối */}
                                 <circle cx={points[i].x} cy={points[i].y} r="5" fill="#0d9488" />
                                 {i === segments.length - 1 && <circle cx={points[i+1].x} cy={points[i+1].y} r="5" fill="#0d9488" />}
                             </g>
