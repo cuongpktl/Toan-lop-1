@@ -16,27 +16,20 @@ const shuffleArray = <T>(array: T[]): T[] => {
   return arr;
 };
 
-// --- SINH BÀI TOÁN NGÔI NHÀ PHÉP TÍNH (THEO HÌNH ẢNH) ---
+// --- SINH BÀI TOÁN NGÔI NHÀ PHÉP TÍNH (PHẠM VI 10) ---
 export const generateHouseProblems = (count: number): MathProblem[] => {
   const problems: MathProblem[] = [];
   for (let i = 0; i < count; i++) {
-    let sum, p1, p2;
-    // Đảm bảo các số khác nhau và tổng không quá 10
-    sum = getRandomInt(3, 10);
-    p1 = getRandomInt(1, sum - 1);
-    p2 = sum - p1;
-
-    // Tránh trường hợp p1 = p2 để bài toán đa dạng hơn
-    if (p1 === p2 && sum < 10) {
-        sum++;
-        p2 = sum - p1;
-    }
+    // Phạm vi Lớp 1: Tổng trong phạm vi 10
+    let sum = getRandomInt(2, 10);
+    let p1 = getRandomInt(0, sum);
+    let p2 = sum - p1;
 
     problems.push({
       id: generateId(),
       type: 'house',
-      question: "Viết phép tính thích hợp (theo mẫu)",
-      numbers: [sum, p1, p2], // sum ở nóc, p1 p2 ở dưới
+      question: "Viết các phép tính thích hợp",
+      numbers: [sum, p1, p2],
       answer: { sum, p1, p2 }
     });
   }
@@ -55,7 +48,7 @@ export const generateChainProblem = (): MathProblem => {
   for (let i = 0; i < nodesCount - 1; i++) {
     const op = Math.random() > 0.5 ? '+' : '-';
     let stepVal, nextVal;
-    if (op === '+') { stepVal = getRandomInt(1, 10 - currentVal); nextVal = currentVal + stepVal; }
+    if (op === '+' || currentVal < 2) { stepVal = getRandomInt(1, 10 - currentVal); nextVal = currentVal + stepVal; }
     else { stepVal = getRandomInt(1, currentVal); nextVal = currentVal - stepVal; }
     steps.push({ op, val: stepVal });
     const isHidden = true;
@@ -297,11 +290,9 @@ export const generateMeasurementProblems = (count: number): MathProblem[] => {
       problems.push({ id: generateId(), type: 'measurement', visualType: 'balance', visualData: [w1, w2], answer: w1 + w2, unit: 'kg' });
     } else if (vType === 'spring') {
       const val = getRandomInt(1, 10);
-      // visualData điều khiển kim cân, answer dùng để kiểm tra kết quả
       problems.push({ id: generateId(), type: 'measurement', visualType: 'spring', visualData: val, answer: val, unit: 'kg' });
     } else if (vType === 'beaker') {
       const val = getRandomInt(1, 10);
-      // visualData điều khiển mực nước, answer dùng để kiểm tra kết quả
       problems.push({ id: generateId(), type: 'measurement', visualType: 'beaker', visualData: val, answer: val, unit: 'l' });
     } else {
       const n1 = getRandomInt(1, 8), n2 = getRandomInt(1, 10 - n1);
@@ -322,6 +313,128 @@ export const generateGeometryProblems = (count: number): MathProblem[] => {
     }
   }
   return problems;
+};
+
+// --- SINH BÀI TOÁN XẾP HÌNH (PUZZLE) ---
+export const generatePuzzleProblem = (): MathProblem => {
+  const shapes = {
+    TRIANGLE: { d: "M 50 15 L 90 85 L 10 85 Z" },
+    SQUARE: { d: "M 20 20 H 80 V 80 H 20 Z" },
+    CIRCLE: { d: "M 50 10 A 40 40 0 1 1 50 90 A 40 40 0 1 1 50 10" },
+    RECT: { d: "M 10 30 H 90 V 70 H 10 Z" }
+  };
+
+  const templates = [
+    {
+      name: "Tên Lửa",
+      pieces: [
+        { id: 'p1', x: 50, y: 30, scale: 0.6, type: 'TRIANGLE', targetRot: 0 },
+        { id: 'p2', x: 50, y: 70, scale: 0.8, type: 'SQUARE', targetRot: 0 },
+      ],
+      colors: ["#ef4444", "#3b82f6"]
+    },
+    {
+      name: "Cây Thông",
+      pieces: [
+        { id: 'p1', x: 50, y: 30, scale: 0.5, type: 'TRIANGLE', targetRot: 0 },
+        { id: 'p2', x: 50, y: 55, scale: 0.7, type: 'TRIANGLE', targetRot: 0 },
+        { id: 'p3', x: 50, y: 85, scale: 0.3, type: 'RECT', targetRot: 90 },
+      ],
+      colors: ["#22c55e", "#16a34a", "#78350f"]
+    }
+  ];
+
+  const template = templates[getRandomInt(0, templates.length - 1)];
+  const sourceShapes = template.pieces.map((p, i) => ({
+    instanceId: generateId(),
+    id: p.type,
+    d: (shapes as any)[p.type].d,
+    color: template.colors[i % template.colors.length]
+  }));
+
+  return {
+    id: generateId(),
+    type: 'puzzle',
+    visualData: {
+      sourceShapes: shuffleArray(sourceShapes),
+      gridPieces: template.pieces,
+      templateName: template.name,
+      allShapes: shapes
+    },
+    answer: template.pieces.map(p => ({ id: p.id, targetRot: p.targetRot }))
+  };
+};
+
+// --- SINH BÀI TOÁN HỖN HỢP (LUYỆN TẬP) ---
+export const generateMixedProblems = (count: number): MathProblem[] => {
+  const problems: MathProblem[] = [];
+  const generators = [
+    () => generateVerticalProblems(1)[0],
+    () => generateExpressionProblems(1)[0],
+    () => generateFillBlankProblems(1)[0],
+    () => generateComparisonProblems(1)[0],
+    () => generateMultipleChoiceProblems(1)[0],
+    () => generateDecodeProblems(1)[0],
+    () => generateHouseProblems(1)[0],
+    () => generateMeasurementProblems(1)[0],
+    () => generateGeometryProblems(1)[0],
+  ];
+
+  for (let i = 0; i < count; i++) {
+    const gen = generators[getRandomInt(0, generators.length - 1)];
+    problems.push(gen());
+  }
+  return problems;
+};
+
+// --- SINH DỮ LIỆU GAME GHÉP HÌNH (MATCHING GAME) ---
+export const generateMatchingGameData = (count: number) => {
+  const birds: MathProblem[] = [];
+  const houses: { id: string; value: number }[] = [];
+  const usedValues = new Set<number>();
+
+  for (let i = 0; i < count; i++) {
+    let val = getRandomInt(2, 10);
+    while (usedValues.has(val)) val = getRandomInt(2, 10);
+    usedValues.add(val);
+
+    let found = false;
+    let attempts = 0;
+    while (!found && attempts < 50) {
+        attempts++;
+        const o1 = Math.random() > 0.5 ? '+' : '-';
+        const o2 = Math.random() > 0.5 ? '+' : '-';
+        const num1 = getRandomInt(0, 10);
+        const num2 = getRandomInt(0, 10);
+        const s1 = o1 === '+' ? num1 + num2 : num1 - num2;
+        if (s1 >= 0 && s1 <= 10) {
+            const num3 = getRandomInt(0, 10);
+            const res = o2 === '+' ? s1 + num3 : s1 - num3;
+            if (res === val) {
+                birds.push({ 
+                    id: String(i), 
+                    type: 'expression', 
+                    numbers: [num1, num2, num3], 
+                    operators: [o1, o2], 
+                    answer: val 
+                });
+                found = true;
+            }
+        }
+    }
+    if (!found) {
+        birds.push({ 
+            id: String(i), 
+            type: 'expression', 
+            numbers: [val, 0, 0], 
+            operators: ['+', '+'], 
+            answer: val 
+        });
+    }
+    houses.push({ id: String(i), value: val });
+  }
+
+  return { birds, houses: shuffleArray(houses) };
 };
 
 // CÁC HÌNH LIB CHO CHALLENGE
@@ -348,15 +461,10 @@ const CHALLENGE_TEMPLATES = [
 export const generateChallengeProblem = (): MathProblem => {
     const idx = getRandomInt(0, CHALLENGE_TEMPLATES.length - 1);
     const template = CHALLENGE_TEMPLATES[idx];
-    
-    // Tạo options sai
     const decoy1 = { id: 'w1', label: 'B', d: "M 20 20 H 80 V 80 H 20 Z", color: "#ddd", name: "Hình sai" };
     const decoy2 = { id: 'w2', label: 'C', d: "M 50 10 L 90 90 L 10 90 Z", color: "#eee", name: "Hình khác" };
-    
     const correctOption = { id: 'a', label: 'A', d: template.correctD, color: template.correctColor, name: template.name };
     const allOptions = shuffleArray([correctOption, decoy1, decoy2]);
-    
-    // Gán lại label A, B, C cho options đã shuffle
     allOptions.forEach((o, i) => o.label = String.fromCharCode(65 + i));
 
     return { 
@@ -369,114 +477,4 @@ export const generateChallengeProblem = (): MathProblem => {
         }, 
         answer: allOptions.find(o => o.id === 'a')?.label 
     };
-};
-
-const PUZZLE_TEMPLATES = [
-    { name: "Ngôi Nhà", pieces: [{ id: 't1', type: 'SQR', x: 50, y: 70, scale: 0.4, targetRot: 0 }, { id: 't2', type: 'TRI', x: 50, y: 30, scale: 0.5, targetRot: 0 }] },
-    { name: "Cây Thông", pieces: [{ id: 't1', type: 'RECT', x: 50, y: 80, scale: 0.3, targetRot: 0 }, { id: 't2', type: 'TRI', x: 50, y: 40, scale: 0.6, targetRot: 0 }] },
-    { name: "Thuyền", pieces: [{ id: 't1', type: 'RECT', x: 50, y: 70, scale: 0.5, targetRot: 0 }, { id: 't2', type: 'TRI', x: 70, y: 40, scale: 0.4, targetRot: 0 }] },
-    { name: "Xe Tải", pieces: [{ id: 't1', type: 'RECT', x: 40, y: 60, scale: 0.5, targetRot: 0 }, { id: 't2', type: 'CIR', x: 25, y: 85, scale: 0.2, targetRot: 0 }, { id: 't3', type: 'CIR', x: 55, y: 85, scale: 0.2, targetRot: 0 }] },
-    { name: "Robot", pieces: [{ id: 't1', type: 'SQR', x: 50, y: 30, scale: 0.3, targetRot: 0 }, { id: 't2', type: 'RECT', x: 50, y: 70, scale: 0.5, targetRot: 0 }] },
-    { name: "Kẹo", pieces: [{ id: 't1', type: 'CIR', x: 50, y: 40, scale: 0.5, targetRot: 0 }, { id: 't2', type: 'RECT', x: 50, y: 85, scale: 0.3, targetRot: 90 }] },
-    { name: "Mũ", pieces: [{ id: 't1', type: 'TRI', x: 50, y: 60, scale: 0.6, targetRot: 0 }, { id: 't2', type: 'CIR', x: 50, y: 15, scale: 0.2, targetRot: 0 }] },
-    { name: "Mũ", pieces: [{ id: 't1', type: 'TRI', x: 50, y: 40, scale: 0.5, targetRot: 180 }, { id: 't2', type: 'TRI', x: 50, y: 80, scale: 0.4, targetRot: 0 }] },
-    { name: "Cửa Sổ", pieces: [{ id: 't1', type: 'SQR', x: 35, y: 35, scale: 0.3, targetRot: 0 }, { id: 't2', type: 'SQR', x: 65, y: 35, scale: 0.3, targetRot: 0 }, { id: 't3', type: 'SQR', x: 35, y: 65, scale: 0.3, targetRot: 0 }, { id: 't4', type: 'SQR', x: 65, y: 65, scale: 0.3, targetRot: 0 }] },
-    { name: "Dấu Cộng", pieces: [{ id: 't1', type: 'RECT', x: 50, y: 50, scale: 0.6, targetRot: 0 }, { id: 't2', type: 'RECT', x: 50, y: 50, scale: 0.6, targetRot: 90 }] }
-];
-
-const SHAPES_DATA = { 
-    'SQR': { d: "M 0 0 H 100 V 100 H 0 Z", color: "#fcd34d" }, 
-    'TRI': { d: "M 0 100 L 100 100 L 50 0 Z", color: "#60a5fa" },
-    'CIR': { d: "M 50 0 A 50 50 0 1 1 50 100 A 50 50 0 1 1 50 0", color: "#f87171" },
-    'RECT': { d: "M 0 30 H 100 V 70 H 0 Z", color: "#34d399" }
-};
-
-export const generatePuzzleProblem = (): MathProblem => {
-    const idx = getRandomInt(0, PUZZLE_TEMPLATES.length - 1);
-    const template = PUZZLE_TEMPLATES[idx];
-    
-    const sourceShapes = template.pieces.map((p, i) => ({
-        instanceId: `i-${i}`,
-        id: p.type,
-        ...SHAPES_DATA[p.type as keyof typeof SHAPES_DATA]
-    }));
-
-    return { 
-        id: generateId(), 
-        type: 'puzzle', 
-        visualData: { 
-            templateName: template.name, 
-            allShapes: SHAPES_DATA, 
-            sourceShapes: sourceShapes, 
-            gridPieces: template.pieces 
-        }, 
-        answer: template.pieces.map(p => ({ id: p.id, targetRot: p.targetRot })) 
-    };
-};
-
-// --- SINH DỮ LIỆU TRÒ CHƠI GHÉP CẶP (BIRD MATCHING) ---
-export const generateMatchingGameData = (count: number) => {
-  const birds: MathProblem[] = []; const houses: { id: string; value: number }[] = []; const usedResults = new Set<number>();
-  for (let i = 0; i < count; i++) {
-    let birdData: MathProblem | null = null; let houseData: { id: string; value: number } | null = null; let found = false;
-    while (!found) {
-      const n1 = getRandomInt(1, 8); const n2 = getRandomInt(1, 5); const op1 = Math.random() > 0.5 ? '+' : '-'; const step1 = op1 === '+' ? n1 + n2 : n1 - n2;
-      if (step1 >= 0 && step1 <= 10) {
-        const n3 = getRandomInt(1, 5); const op2 = Math.random() > 0.5 ? '+' : '-'; const res = op2 === '+' ? step1 + n3 : step1 - n3;
-        if (res >= 0 && res <= 10 && !usedResults.has(res)) {
-          usedResults.add(res); const id = generateId();
-          birdData = { id, type: 'expression', numbers: [n1, n2, n3], operators: [op1, op2], answer: res };
-          houseData = { id, value: res }; found = true;
-        }
-      }
-    }
-    if (birdData && houseData) { birds.push(birdData); houses.push(houseData); }
-  }
-  return { birds: shuffleArray(birds), houses: shuffleArray(houses) };
-};
-
-export const generateMixedProblems = (count: number): MathProblem[] => {
-  const problems: MathProblem[] = [];
-  // 1. Đặt tính (Vertical Add/Sub)
-  problems.push(generateVerticalProblems(1)[0]);
-  // 2. Biểu thức dãy tính chuẩn (Expression Calc)
-  problems.push(generateExpressionProblems(20).find(p => p.visualType === 'calc')!);
-  // 3. Biểu thức khuyết số đầu (Expression Missing First)
-  problems.push(generateExpressionProblems(20).find(p => p.visualType === 'missing_first')!);
-  // 4. Biểu thức so sánh/phương trình (Expression Equation)
-  problems.push(generateExpressionProblems(20).find(p => p.visualType === 'equation')!);
-  // 5. Thẻ số điền khuyết (FillBlank Missing A/B/Result)
-  problems.push(generateFillBlankProblems(20).find(p => !p.visualType)!);
-  // 6. Sơ đồ dây chuyền (Chain)
-  problems.push(generateChainProblem());
-  // 7. Đo lường - Cân đòn (Balance Scale)
-  problems.push(generateMeasurementProblems(20).find(p => p.visualType === 'balance')!);
-  // 8. Đo lường - Cân đồng hồ (Spring Scale)
-  problems.push(generateMeasurementProblems(20).find(p => p.visualType === 'spring')!);
-  // 9. Đo lường - Bình nước (Beaker)
-  problems.push(generateMeasurementProblems(20).find(p => p.visualType === 'beaker')!);
-  // 10. Đo lường - Phép tính đơn vị (Unit Calculation)
-  problems.push(generateMeasurementProblems(20).find(p => p.visualType === 'calc')!);
-  // 11. Hình học - Độ dài đường gấp khúc (Path Length)
-  problems.push(generateGeometryProblems(20).find(p => p.visualType === 'path_length')!);
-  // 12. Hình học - Nhận dạng hình (Identify Shape)
-  problems.push(generateGeometryProblems(20).find(p => p.visualType === 'identify_shape')!);
-  // 13. Quy luật - Chuỗi hình (Sequence Pattern)
-  problems.push(generatePatternProblems(20).find(p => p.visualType === 'sequence')!);
-  // 14. Quy luật - Ô lưới (Grid Pattern)
-  problems.push(generatePatternProblems(20).find(p => p.visualData.grid)!);
-  // 15. So sánh - Tìm dấu > < = (Comparison Sign)
-  problems.push(generateComparisonProblems(20).find(p => !p.visualType)!);
-  // 16. So sánh - Điền số khuyết (Comparison Missing Num)
-  problems.push(generateComparisonProblems(20).find(p => p.visualType === 'missing_number')!);
-  // 17. Trắc nghiệm - Kết quả phép tính (MCQ Result)
-  problems.push(generateMultipleChoiceProblems(20).find(p => !p.visualType)!);
-  // 18. Trắc nghiệm - Đường đi ngắn nhất (Shortest Path)
-  problems.push(generateShortestPathProblem());
-  // 19. Giải mã con vật (Decode)
-  problems.push(generateDecodeProblems(1)[0]);
-  // 20. Ngôi nhà phép tính (House Math)
-  problems.push(generateHouseProblems(1)[0]);
-  
-  return problems;
 };

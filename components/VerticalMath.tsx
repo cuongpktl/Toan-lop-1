@@ -1,5 +1,7 @@
+
 import React from 'react';
 import { MathProblem } from '../types';
+import { focusNextEmptyInput } from '../services/uiUtils';
 
 interface Props {
   problem: MathProblem;
@@ -10,6 +12,14 @@ interface Props {
 const VerticalMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
   const isCorrect = showResult && parseInt(problem.userAnswer || '') === problem.answer;
   const isWrong = showResult && !isCorrect;
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    onUpdate(val);
+    if (val !== '') {
+      setTimeout(() => focusNextEmptyInput(e.target), 400);
+    }
+  };
 
   return (
     <div className={`p-6 rounded-3xl border-2 flex flex-col items-center justify-center relative bg-white shadow-sm transition-all duration-300 ${isCorrect ? 'border-green-400 bg-green-50' : isWrong ? 'border-red-400 bg-red-50' : 'border-blue-50 hover:border-blue-200 hover:shadow-md'}`}>
@@ -25,16 +35,17 @@ const VerticalMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
       <input 
         type="number" 
         inputMode="numeric"
+        data-priority="2" 
         value={problem.userAnswer || ''}
-        onChange={(e) => onUpdate(e.target.value)}
+        onChange={handleChange}
         disabled={showResult}
         className={`w-24 text-center text-3xl font-black p-2 rounded-2xl border-2 outline-none focus:ring-4 focus:ring-blue-100 transition-all ${
             showResult 
             ? (isCorrect ? 'text-green-600 border-green-300 bg-white' : 'text-red-500 border-red-300 bg-white') 
-            : 'text-gray-800 border-gray-200 bg-gray-50'
+            : 'text-gray-800 border-gray-200 bg-gray-50 focus:border-blue-400'
         }`}
         placeholder="?"
-        style={{ fontSize: '24px' }} // Ensures no auto-zoom on mobile
+        style={{ fontSize: '24px' }}
       />
       
       {isWrong && (

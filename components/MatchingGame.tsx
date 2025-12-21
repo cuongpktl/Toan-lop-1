@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { MathProblem } from '../types';
 import { generateMatchingGameData } from '../services/mathUtils';
 import { audioService } from '../services/audioService';
+import { focusNextEmptyInput } from '../services/uiUtils';
 import { RefreshIcon, StarIcon, BirdIcon, HouseIcon } from './icons';
 
 interface HouseItem {
@@ -45,6 +46,8 @@ const MatchingGame: React.FC = () => {
               setSolvedIds(prev => [...prev, selectedBirdId]);
               setSelectedBirdId(null);
               setSelectedHouseId(null);
+              // Khi giải xong một cặp, tìm ô trung gian trống tiếp theo của con chim khác
+              setTimeout(() => focusNextEmptyInput(), 400);
           } else {
               audioService.play('wrong');
               setWrongMatch(true);
@@ -70,8 +73,12 @@ const MatchingGame: React.FC = () => {
       setSelectedHouseId(selectedHouseId === id ? null : id);
   };
 
-  const handleIntermediateChange = (birdId: string, val: string) => {
+  const handleIntermediateChange = (birdId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = e.target.value;
       setIntermediateValues(prev => ({ ...prev, [birdId]: val }));
+      if (val !== '') {
+          setTimeout(() => focusNextEmptyInput(e.target), 300);
+      }
   };
 
   const isComplete = birds.length > 0 && solvedIds.length === birds.length;
@@ -80,7 +87,6 @@ const MatchingGame: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto px-2 relative">
-      {/* Vị trí điểm: Chuyển lên fixed top để giống các tab khác */}
       {birds.length > 0 && (
         <div className="fixed top-2 left-[150px] sm:left-[220px] md:left-[260px] z-[100] animate-bounce-short">
           <div className="w-16 h-16 sm:w-24 sm:h-24 bg-white border-4 border-blue-600 rounded-full shadow-xl flex flex-col items-center justify-center">
@@ -138,7 +144,6 @@ const MatchingGame: React.FC = () => {
                               ${isWrong ? 'border-red-400 bg-red-50 animate-shake' : ''}
                           `}>
                               <BirdIcon className={`w-20 h-20 ${isSelected ? 'text-blue-500' : 'text-sky-400'}`} />
-                              {/* Cỡ chữ to hơn cho biểu thức */}
                               <div className="absolute -bottom-6 bg-white border-2 border-sky-100 px-3 py-1.5 rounded-xl text-lg sm:text-xl font-black text-gray-700 shadow-lg whitespace-nowrap flex gap-1 items-center">
                                   <span>{n1}</span>
                                   <span className="text-blue-400">{op1}</span>
@@ -149,15 +154,18 @@ const MatchingGame: React.FC = () => {
                           </div>
 
                           <div className="w-full relative h-14 mt-8 flex justify-center overflow-visible">
-                               <div className="absolute top-0 left-[26%] right-[48%] h-4 border-l-2 border-b-2 border-r-2 border-blue-200 rounded-b-lg"></div>
+                               <div className={`absolute top-0 left-[26%] right-[48%] h-4 border-l-2 border-b-2 border-r-2 rounded-b-lg transition-colors ${
+                                   isStep1Correct ? 'border-green-400' : 'border-blue-200'
+                               }`}></div>
                                <div className="absolute top-4 left-[42%] -translate-x-1/2">
                                     <input 
                                         type="number"
                                         inputMode="numeric"
+                                        data-priority="1" 
                                         placeholder="..."
                                         value={userStep1}
                                         onClick={(e) => e.stopPropagation()}
-                                        onChange={(e) => handleIntermediateChange(bird.id, e.target.value)}
+                                        onChange={(e) => handleIntermediateChange(bird.id, e)}
                                         className={`w-12 h-9 text-center text-sm font-black rounded-lg border-2 outline-none transition-all shadow-sm ${
                                             isStep1Correct ? 'border-green-400 bg-green-50 text-green-600' :
                                             isStep1Wrong ? 'border-orange-300 bg-orange-50 text-orange-600' :
@@ -165,7 +173,9 @@ const MatchingGame: React.FC = () => {
                                         }`}
                                     />
                                </div>
-                               <div className="absolute top-6 left-[58%] text-[10px] text-blue-200 font-bold opacity-60">→</div>
+                               <div className={`absolute top-6 left-[58%] text-[10px] font-bold opacity-60 transition-colors ${
+                                   isStep1Correct ? 'text-green-500' : 'text-blue-200'
+                               }`}>→</div>
                           </div>
                       </div>
                   )
@@ -187,7 +197,6 @@ const MatchingGame: React.FC = () => {
                                ${isTargetForWrong ? 'animate-shake' : 'hover:scale-105'}
                           `}>
                               <HouseIcon className={`w-full h-full drop-shadow-2xl ${selectedBirdId && !wrongMatch && !isSolved ? 'text-orange-400' : 'text-orange-200'}`} />
-                              {/* Cỡ chữ to hơn cho số ở tổ */}
                               <div className="absolute top-[45%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-white font-black text-2xl sm:text-3xl drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">
                                   {house.value}
                               </div>

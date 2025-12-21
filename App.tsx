@@ -38,7 +38,6 @@ import ConnectMath from './components/ConnectMath';
 import HouseMath from './components/HouseMath';
 import Find100Game from './components/Find100Game';
 import WordProblem from './components/WordProblem';
-import WordProblemItem from './components/WordProblemItem';
 import MatchingGame from './components/MatchingGame';
 import { 
   CalculatorIcon, 
@@ -90,51 +89,63 @@ const TABS: TabItem[] = [
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('practice');
-  const [problems, setProblems] = useState<MathProblem[]>([]);
-  const [showResult, setShowResult] = useState(false);
-  const [score, setScore] = useState(0);
+  // Cấu trúc state mới: Lưu trữ bài toán và trạng thái nộp bài theo tab
+  const [tabsData, setTabsData] = useState<Record<string, { problems: MathProblem[], showResult: boolean }>>({});
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const startX = useRef(0);
   const scrollLeft = useRef(0);
 
+  // Khởi tạo đề bài cho tab hiện tại nếu chưa có
   useEffect(() => {
-    setShowResult(false);
-    setScore(0);
-    setProblems([]); 
-    refreshData();
+    if (!tabsData[activeTab]) {
+      refreshData(activeTab);
+    }
   }, [activeTab]);
 
-  const refreshData = () => {
-    if (activeTab === 'vertical') setProblems(generateVerticalProblems(10));
-    else if (activeTab === 'expression') setProblems(generateExpressionProblems(10));
-    else if (activeTab === 'cards') setProblems(generateFillBlankProblems(10));
-    else if (activeTab === 'measurement') setProblems(generateMeasurementProblems(10));
-    else if (activeTab === 'geometry') setProblems(generateGeometryProblems(10));
-    else if (activeTab === 'pattern') setProblems(generatePatternProblems(10));
-    else if (activeTab === 'compare') setProblems(generateComparisonProblems(10));
-    else if (activeTab === 'practice') setProblems(generateMixedProblems(20));
-    else if (activeTab === 'choice') setProblems(generateMultipleChoiceProblems(10));
-    else if (activeTab === 'decode') setProblems(generateDecodeProblems(10));
-    else if (activeTab === 'coloring') setProblems(generateColoringProblems(10));
-    else if (activeTab === 'maze') setProblems(generateMazeProblems(10));
-    else if (activeTab === 'connect') setProblems(generateConnectProblems(10));
-    else if (activeTab === 'house') setProblems(generateHouseProblems(10));
-    else if (activeTab === 'challenge') setProblems(Array.from({ length: 10 }, () => generateChallengeProblem()));
-    else if (activeTab === 'puzzle') setProblems(Array.from({ length: 10 }, () => generatePuzzleProblem()));
-    else setProblems([]);
+  const refreshData = (tabId: string) => {
+    let newProblems: MathProblem[] = [];
+    if (tabId === 'vertical') newProblems = generateVerticalProblems(10);
+    else if (tabId === 'expression') newProblems = generateExpressionProblems(10);
+    else if (tabId === 'cards') newProblems = generateFillBlankProblems(10);
+    else if (tabId === 'measurement') newProblems = generateMeasurementProblems(10);
+    else if (tabId === 'geometry') newProblems = generateGeometryProblems(10);
+    else if (tabId === 'pattern') newProblems = generatePatternProblems(10);
+    else if (tabId === 'compare') newProblems = generateComparisonProblems(10);
+    else if (tabId === 'practice') newProblems = generateMixedProblems(20);
+    else if (tabId === 'choice') newProblems = generateMultipleChoiceProblems(10);
+    else if (tabId === 'decode') newProblems = generateDecodeProblems(10);
+    else if (tabId === 'coloring') newProblems = generateColoringProblems(10);
+    else if (tabId === 'maze') newProblems = generateMazeProblems(10);
+    else if (tabId === 'connect') newProblems = generateConnectProblems(10);
+    else if (tabId === 'house') newProblems = generateHouseProblems(10);
+    else if (tabId === 'challenge') newProblems = Array.from({ length: 10 }, () => generateChallengeProblem());
+    else if (tabId === 'puzzle') newProblems = Array.from({ length: 10 }, () => generatePuzzleProblem());
+    
+    setTabsData(prev => ({
+      ...prev,
+      [tabId]: { problems: newProblems, showResult: false }
+    }));
   };
 
+  const currentTabInfo = tabsData[activeTab] || { problems: [], showResult: false };
+  const problems = currentTabInfo.problems;
+  const showResult = currentTabInfo.showResult;
+
   const handleUpdateProblem = (id: string, val: string) => {
-    setProblems(prev => prev.map(p => p.id === id ? { ...p, userAnswer: val } : p));
+    setTabsData(prev => ({
+      ...prev,
+      [activeTab]: {
+        ...prev[activeTab],
+        problems: prev[activeTab].problems.map(p => p.id === id ? { ...p, userAnswer: val } : p)
+      }
+    }));
   };
 
   const handleRefresh = () => {
     audioService.play('click');
-    setShowResult(false);
-    setScore(0);
-    refreshData();
+    refreshData(activeTab);
   };
 
   const handleTabChange = (id: string) => {
@@ -174,14 +185,29 @@ const App: React.FC = () => {
     if (p.type === 'house') {
         const userAns = p.userAnswer ? JSON.parse(p.userAnswer) : {};
         const { sum, p1, p2 } = p.answer;
-        const targets = [
-            [p1, p2, sum], [p2, p1, sum], [sum, p1, p2], [sum, p2, p1]
-        ];
-        return targets.every((target, row) => {
-            return target.every((val, col) => {
-                return parseInt(userAns[`${row}-${col}`]) === val;
-            });
+        const userRows = [0, 1, 2, 3].map(r => {
+            const v0 = parseInt(userAns[`${r}-0`]);
+            const v1 = parseInt(userAns[`${r}-1`]);
+            const v2 = parseInt(userAns[`${r}-2`]);
+            return [v0, v1, v2];
         });
+        const checkAddRow = (row: number[]) => {
+            const [v0, v1, v2] = row;
+            if (isNaN(v0) || isNaN(v1) || isNaN(v2)) return false;
+            return (v0 + v1 === v2) && (v2 === sum) && ((v0 === p1 && v1 === p2) || (v0 === p2 && v1 === p1));
+        };
+        const checkSubRow = (row: number[]) => {
+            const [v0, v1, v2] = row;
+            if (isNaN(v0) || isNaN(v1) || isNaN(v2)) return false;
+            return (v0 - v1 === v2) && (v0 === sum) && ((v1 === p1 && v2 === p2) || (v1 === p2 && v2 === p1));
+        };
+        const addRowsStr = userRows.slice(0, 2).map(r => r.join(','));
+        const subRowsStr = userRows.slice(2, 4).map(r => r.join(','));
+        const allAddsValid = checkAddRow(userRows[0]) && checkAddRow(userRows[1]);
+        const allSubsValid = checkSubRow(userRows[2]) && checkSubRow(userRows[3]);
+        const addsUnique = p1 === p2 || addRowsStr[0] !== addRowsStr[1];
+        const subsUnique = p1 === p2 || subRowsStr[0] !== subRowsStr[1];
+        return allAddsValid && allSubsValid && addsUnique && subsUnique;
     }
     if (p.type === 'comparison' && p.visualType === 'missing_number') {
         if (!user) return false;
@@ -201,27 +227,21 @@ const App: React.FC = () => {
       const targetAnswers = p.answer || {};
       const leftIds = p.visualData?.left?.map((l:any) => l.id) || [];
       if (Object.keys(userConnections).length === 0) return false;
-      return leftIds.every((id: string) => {
-        return parseInt(userConnections[id]) === targetAnswers[id];
-      });
+      return leftIds.every((id: string) => parseInt(userConnections[id]) === targetAnswers[id]);
     }
     if (p.type === 'maze') {
         const userAnswers = p.userAnswer ? JSON.parse(p.userAnswer) : {};
         const targetAnswers = p.answer || {};
         const targetKeys = Object.keys(targetAnswers);
         if (targetKeys.length === 0) return false;
-        return targetKeys.every(coord => {
-            return parseInt(userAnswers[coord]) === targetAnswers[coord];
-        });
+        return targetKeys.every(coord => parseInt(userAnswers[coord]) === targetAnswers[coord]);
     }
     if (p.visualType === 'chain') {
         const userAnswers = p.userAnswer ? JSON.parse(p.userAnswer) : {};
         const targetAnswers = p.answer || {};
         const targetKeys = Object.keys(targetAnswers);
         if (targetKeys.length === 0) return false;
-        return targetKeys.every(idx => {
-            return parseInt(userAnswers[idx]) === targetAnswers[idx];
-        });
+        return targetKeys.every(idx => parseInt(userAnswers[idx]) === targetAnswers[idx]);
     }
     if (p.type === 'coloring') {
         const userData = p.userAnswer ? JSON.parse(p.userAnswer) : { colors: {}, results: {} };
@@ -254,30 +274,37 @@ const App: React.FC = () => {
       const targetOps = p.answer ? JSON.parse(p.answer) : ['', ''];
       return userOps.every((op: string, i: number) => op === targetOps[i]);
     }
-    
-    if (typeof p.answer === 'number') {
-        return parseInt(user) === p.answer;
-    } else if (typeof p.answer === 'string') {
-        return user.toLowerCase() === target.toLowerCase();
-    }
-    
+    if (typeof p.answer === 'number') return parseInt(user) === p.answer;
+    if (typeof p.answer === 'string') return user.toLowerCase() === target.toLowerCase();
     return parseInt(user) === p.answer;
   };
 
   const checkResults = () => {
-    if (showResult) { setShowResult(false); return; }
+    if (showResult) {
+      // Nhấn lần 2 để reset trạng thái nộp bài (làm lại cùng đề)
+      setTabsData(prev => ({
+        ...prev,
+        [activeTab]: { ...prev[activeTab], showResult: false }
+      }));
+      return;
+    }
+    
     const correctCount = problems.filter(isProblemCorrect).length;
-    setScore(correctCount);
     if (correctCount === problems.length && problems.length > 0) {
       audioService.play('success');
       confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6'] });
     } else {
       audioService.play(correctCount > problems.length / 2 ? 'correct' : 'wrong');
     }
-    setShowResult(true);
+
+    setTabsData(prev => ({
+      ...prev,
+      [activeTab]: { ...prev[activeTab], showResult: true }
+    }));
   };
 
-  const calculatedScore10 = problems.length > 0 ? (10 / problems.length) * score : 0;
+  const scoreCount = problems.filter(isProblemCorrect).length;
+  const calculatedScore10 = problems.length > 0 ? (10 / problems.length) * scoreCount : 0;
   const displayScore = calculatedScore10 % 1 === 0 ? calculatedScore10 : calculatedScore10.toFixed(1);
 
   const renderContent = () => {

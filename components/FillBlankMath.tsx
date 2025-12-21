@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { MathProblem } from '../types';
+import { focusNextEmptyInput } from '../services/uiUtils';
 
 interface Props {
   problem: MathProblem;
@@ -14,54 +15,23 @@ const FillBlankMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
   
   const userAns = problem.userAnswer || (isChain || isDoubleOp ? JSON.stringify({}) : '');
 
-  const handleOpClick = (index: number, symbol: string) => {
-    if (showResult) return;
-    if (isDoubleOp) {
-      const userOps = JSON.parse(userAns);
-      const newOps = Array.isArray(userOps) ? [...userOps] : ['', ''];
-      newOps[index] = symbol;
-      onUpdate(JSON.stringify(newOps));
-    } else {
-      onUpdate(symbol);
-    }
-  };
-
-  const handleChainInputChange = (index: number, val: string) => {
+  const handleChainInputChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
     if (showResult) return;
     const currentAnswers = JSON.parse(userAns);
     const newAnswers = { ...currentAnswers, [String(index)]: val };
     onUpdate(JSON.stringify(newAnswers));
+    if (val !== '') {
+      setTimeout(() => focusNextEmptyInput(e.target), 300);
+    }
   };
 
-  const renderSignPicker = (index: number) => {
-    const userOps = isDoubleOp ? JSON.parse(userAns) : [userAns];
-    const targetOps = isDoubleOp ? JSON.parse(problem.answer) : [problem.answer];
-    const currentOp = userOps[index];
-    const targetOp = targetOps[index];
-    
-    return (
-      <div className="relative group">
-        <div className={`flex flex-col gap-1 p-1 rounded-2xl border-2 bg-white shadow-sm transition-all ${
-            showResult ? (currentOp === targetOp ? 'border-green-300' : 'border-red-300 animate-shake') : 'border-blue-100'
-        }`}>
-          {['+', '-'].map(symbol => (
-            <button
-              key={symbol}
-              onClick={() => handleOpClick(index, symbol)}
-              className={`w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-xl font-black rounded-xl border-2 transition-all ${
-                currentOp === symbol 
-                  ? 'bg-indigo-500 text-white border-indigo-600 scale-105 shadow-md' 
-                  : 'bg-white border-gray-50 text-gray-300 hover:border-indigo-200 hover:text-indigo-400'
-              } ${showResult && symbol === targetOp ? 'bg-green-500 text-white border-green-600' : ''}
-                ${showResult && currentOp === symbol && symbol !== targetOp ? 'bg-red-500 text-white border-red-600' : ''}
-              `}
-            >
-              {symbol}
-            </button>
-          ))}
-        </div>
-      </div>
-    );
+  const handleSingleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    onUpdate(val);
+    if (val !== '') {
+      setTimeout(() => focusNextEmptyInput(e.target), 300);
+    }
   };
 
   const renderNumberBox = (val: number, isHidden: boolean, idx: number, shape: 'circle' | 'square' = 'square', isStarting = false) => {
@@ -70,8 +40,6 @@ const FillBlankMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
     const targetVal = isChain ? problem.answer[String(idx)] : problem.answer;
     
     const correct = showResult && isHidden && parseInt(userVal) === targetVal;
-    const wrong = showResult && isHidden && userVal !== '' && parseInt(userVal) !== targetVal;
-
     const borderRadius = shape === 'circle' ? 'rounded-full' : 'rounded-2xl';
 
     return (
@@ -85,8 +53,9 @@ const FillBlankMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
             <input
               type="number"
               inputMode="numeric"
+              data-priority="2" 
               value={userVal || ''}
-              onChange={(e) => isChain ? handleChainInputChange(idx, e.target.value) : onUpdate(e.target.value)}
+              onChange={(e) => isChain ? handleChainInputChange(idx, e) : handleSingleInputChange(e)}
               disabled={showResult}
               className="w-full h-full text-center bg-transparent outline-none"
               placeholder="..."
@@ -132,41 +101,16 @@ const FillBlankMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
   const hideIndex = problem.options?.[0] ?? 2;
   const a = problem.numbers?.[0] || 0;
   const b = problem.numbers?.[1] || 0;
-  const c = problem.numbers?.[2] || 0;
   const res = problem.visualData;
 
   return (
     <div className="flex flex-col gap-4 animate-fadeIn w-full items-center">
-      {problem.question && <p className="text-center font-black text-gray-400 text-xs uppercase tracking-widest mb-2">{problem.question}</p>}
-      
       <div className="p-6 sm:p-10 rounded-[48px] border-4 border-dashed border-indigo-100 bg-indigo-50/30 flex flex-wrap justify-center items-center gap-4 sm:gap-8 relative overflow-visible shadow-sm min-w-[300px]">
-        {problem.visualType === 'reverse_calc' ? (
-          <>
-            {renderNumberBox(res, false, 0)}
-            <div className="text-3xl font-black text-indigo-300">=</div>
-            {renderNumberBox(a, false, 1)}
-            {renderSignPicker(0)}
-            {renderNumberBox(b, false, 2)}
-          </>
-        ) : isDoubleOp ? (
-          <>
-            {renderNumberBox(a, false, 0)}
-            {renderSignPicker(0)}
-            {renderNumberBox(b, false, 1)}
-            {renderSignPicker(1)}
-            {renderNumberBox(c, false, 2)}
-            <div className="text-3xl font-black text-indigo-300">=</div>
-            {renderNumberBox(res, false, 3)}
-          </>
-        ) : (
-          <>
-            {renderNumberBox(a, hideIndex === 0, 0)}
-            <div className="text-3xl font-black text-indigo-300">{problem.operators?.[0]}</div>
-            {renderNumberBox(b, hideIndex === 1, 1)}
-            <div className="text-3xl font-black text-indigo-300">=</div>
-            {renderNumberBox(res, hideIndex === 2, 2)}
-          </>
-        )}
+        {renderNumberBox(a, hideIndex === 0, 0)}
+        <div className="text-3xl font-black text-indigo-300">{problem.operators?.[0]}</div>
+        {renderNumberBox(b, hideIndex === 1, 1)}
+        <div className="text-3xl font-black text-indigo-300">=</div>
+        {renderNumberBox(res, hideIndex === 2, 2)}
       </div>
     </div>
   );
