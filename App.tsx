@@ -7,7 +7,6 @@ import {
   generateVerticalProblems, 
   generateExpressionProblems, 
   generateFillBlankProblems, 
-  generateMeasurementProblems, 
   generateGeometryProblems,
   generatePatternProblems,
   generateChallengeProblem,
@@ -24,7 +23,6 @@ import {
 import VerticalMath from './components/VerticalMath';
 import ExpressionMath from './components/ExpressionMath';
 import FillBlankMath from './components/FillBlankMath';
-import MeasurementMath from './components/MeasurementMath';
 import GeometryMath from './components/GeometryMath';
 import PatternMath from './components/PatternMath';
 import ChallengeMath from './components/ChallengeMath';
@@ -38,7 +36,6 @@ import ConnectMath from './components/ConnectMath';
 import HouseMath from './components/HouseMath';
 import Find100Game from './components/Find100Game';
 import WordProblem from './components/WordProblem';
-import MatchingGame from './components/MatchingGame';
 import { 
   CalculatorIcon, 
   BookOpenIcon, 
@@ -46,8 +43,6 @@ import {
   LayersIcon, 
   CheckCircleIcon, 
   RefreshIcon, 
-  PuzzleIcon, 
-  ScaleIcon, 
   ShapesIcon,
   PatternIcon,
   StarIcon,
@@ -80,8 +75,6 @@ const TABS: TabItem[] = [
   { id: 'cards', label: 'Thẻ Số', icon: <GridIcon />, color: 'bg-indigo-500' },
   { id: 'expression', label: 'Biểu Thức', icon: <CalculatorIcon />, color: 'bg-purple-500' },
   { id: 'geometry', label: 'Hình Học', icon: <ShapesIcon />, color: 'bg-teal-500' },
-  { id: 'measurement', label: 'Đo Lường', icon: <ScaleIcon />, color: 'bg-pink-500' },
-  { id: 'matching', label: 'Ghép Hình', icon: <PuzzleIcon />, color: 'bg-orange-500' },
   { id: 'game', label: 'Tìm 10', icon: <CheckCircleIcon />, color: 'bg-green-500' },
   { id: 'challenge', label: 'Tìm hình', icon: <StarIcon fill="white" />, color: 'bg-rose-500' },
   { id: 'puzzle', label: 'Xếp Hình', icon: <GridIcon />, color: 'bg-sky-500' },
@@ -112,7 +105,6 @@ const ProblemWrapper = React.memo(({ p, showResult, onUpdate, index, isFullWidth
 
         <div className={`${isFullWidth ? 'w-full' : 'bg-white rounded-[24px] sm:rounded-[32px] p-1.5 sm:p-4'}`}>
             {p.type === 'fill_blank' && <FillBlankMath problem={p} onUpdate={onUpdate} showResult={showResult} />}
-            {p.type === 'measurement' && <MeasurementMath problem={p} onUpdate={onUpdate} showResult={showResult} />}
             {p.type === 'geometry' && <GeometryMath problem={p} onUpdate={onUpdate} showResult={showResult} />}
             {p.type === 'pattern' && <PatternMath problem={p} onUpdate={onUpdate} showResult={showResult} />}
             {p.type === 'challenge' && <ChallengeMath problem={p} onUpdate={onUpdate} showResult={showResult} />}
@@ -145,7 +137,6 @@ const App: React.FC = () => {
     if (tabId === 'vertical') newProblems = generateVerticalProblems(10);
     else if (tabId === 'expression') newProblems = generateExpressionProblems(10);
     else if (tabId === 'cards') newProblems = generateFillBlankProblems(10);
-    else if (tabId === 'measurement') newProblems = generateMeasurementProblems(10);
     else if (tabId === 'geometry') newProblems = generateGeometryProblems(10);
     else if (tabId === 'pattern') newProblems = generatePatternProblems(10);
     else if (tabId === 'compare') newProblems = generateComparisonProblems(10);
@@ -169,9 +160,9 @@ const App: React.FC = () => {
     if (!tabsData[activeTab]) {
       refreshData(activeTab);
     }
-  }, [activeTab, refreshData, tabsData]);
+  }, [activeTab, refreshData]);
 
-  const currentTabInfo = tabsData[activeTab] || { problems: [], showResult: false };
+  const currentTabInfo = useMemo(() => tabsData[activeTab] || { problems: [], showResult: false }, [tabsData, activeTab]);
   const problems = currentTabInfo.problems;
   const showResult = currentTabInfo.showResult;
 
@@ -195,6 +186,7 @@ const App: React.FC = () => {
   };
 
   const handleTabChange = (id: string) => {
+    if (activeTab === id) return;
     audioService.play('click');
     setActiveTab(id);
   };
@@ -318,7 +310,6 @@ const App: React.FC = () => {
   const renderContent = () => {
     if (activeTab === 'word') return <WordProblem />;
     if (activeTab === 'game') return <Find100Game />;
-    if (activeTab === 'matching') return <MatchingGame />;
     const isFullWidth = activeTab === 'challenge' || activeTab === 'puzzle' || activeTab === 'coloring' || activeTab === 'maze' || activeTab === 'connect';
     return (
       <div className="max-w-4xl mx-auto animate-fadeIn px-1 sm:px-0 relative">
