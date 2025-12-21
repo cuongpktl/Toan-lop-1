@@ -39,16 +39,24 @@ const FillBlankMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
     const userVal = isChain ? currentAnswers[String(idx)] : userAns;
     const targetVal = isChain ? problem.answer[String(idx)] : problem.answer;
     
-    const correct = showResult && isHidden && parseInt(userVal) === targetVal;
+    const isCurrentlyCorrect = userVal !== '' && parseInt(userVal) === targetVal;
+    const showFinalCorrect = showResult && isHidden && isCurrentlyCorrect;
     const borderRadius = shape === 'circle' ? 'rounded-full' : 'rounded-2xl';
+
+    // Logic màu sắc: Ưu tiên showResult (xanh/đỏ khi nộp bài), 
+    // sau đó là real-time (xanh khi gõ đúng), cuối cùng là mặc định
+    let colorClasses = 'bg-white border-indigo-300 text-gray-800';
+    if (showResult && isHidden) {
+      colorClasses = isCurrentlyCorrect ? 'bg-green-50 border-green-400 text-green-700' : 'bg-red-50 border-red-400 text-red-700';
+    } else if (isHidden && isCurrentlyCorrect) {
+      colorClasses = 'bg-green-50 border-green-400 text-green-700 shadow-lg shadow-green-100';
+    } else if (!isHidden) {
+      colorClasses = isStarting ? 'bg-gray-200 border-gray-400 text-gray-700' : 'bg-white border-gray-100 text-gray-700';
+    }
 
     return (
       <div className="relative flex flex-col items-center">
-        <div className={`w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center text-2xl font-black border-4 shadow-md transition-all ${borderRadius} ${
-          isHidden 
-            ? (showResult ? (correct ? 'bg-green-50 border-green-400 text-green-700' : 'bg-red-50 border-red-400 text-red-700') : 'bg-white border-indigo-300 text-gray-800')
-            : (isStarting ? 'bg-gray-200 border-gray-400 text-gray-700' : 'bg-white border-gray-100 text-gray-700')
-        }`}>
+        <div className={`w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center text-2xl font-black border-4 shadow-md transition-all ${borderRadius} ${colorClasses}`}>
           {isHidden ? (
             <input
               type="number"
@@ -64,7 +72,7 @@ const FillBlankMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
             val
           )}
         </div>
-        {showResult && isHidden && !correct && (
+        {showResult && isHidden && !isCurrentlyCorrect && (
           <div className="absolute -top-4 -right-4 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-black shadow-lg animate-bounce-short z-10">
             {targetVal}
           </div>

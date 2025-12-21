@@ -178,6 +178,8 @@ const App: React.FC = () => {
 
   const isProblemCorrect = (p: MathProblem) => {
     const user = String(p.userAnswer || '').trim();
+    
+    // 1. Ngôi nhà phép tính
     if (p.type === 'house') {
         const userAns = p.userAnswer ? JSON.parse(p.userAnswer) : {};
         const { sum, p1, p2 } = p.answer;
@@ -186,35 +188,71 @@ const App: React.FC = () => {
         const checkSub = (r: number[]) => !r.some(isNaN) && r[0]-r[1]===r[2] && r[0]===sum && ((r[1]===p1 && r[2]===p2)||(r[1]===p2 && r[2]===p1));
         return checkAdd(userRows[0]) && checkAdd(userRows[1]) && checkSub(userRows[2]) && checkSub(userRows[3]);
     }
-    if (p.type === 'comparison' && p.visualType === 'missing_number') {
-        if (!user) return false;
-        const nums = [...(p.numbers || [])];
-        const hideIdx = p.visualData?.hideIdx;
-        const targetSign = p.visualData?.sign;
-        const ops = p.operators || ['+', '+'];
-        nums[hideIdx] = parseInt(user);
-        const lRes = ops[0] === '+' ? nums[0] + nums[1] : nums[0] - nums[1];
-        const rRes = ops[1] === '+' ? nums[2] + nums[3] : nums[2] - nums[3];
-        if (targetSign === '>') return lRes > rRes;
-        if (targetSign === '<') return lRes < rRes;
-        return lRes === rRes;
+
+    // 2. So sánh (Dấu hoặc Điền số)
+    if (p.type === 'comparison') {
+        if (p.visualType === 'missing_number') {
+            if (!user) return false;
+            const nums = [...(p.numbers || [])];
+            const hideIdx = p.visualData?.hideIdx;
+            const targetSign = p.visualData?.sign;
+            const ops = p.operators || ['+', '+'];
+            nums[hideIdx] = parseInt(user);
+            const lRes = ops[0] === '+' ? nums[0] + nums[1] : nums[0] - nums[1];
+            const rRes = ops[1] === '+' ? nums[2] + nums[3] : nums[2] - nums[3];
+            if (targetSign === '>') return lRes > rRes;
+            if (targetSign === '<') return lRes < rRes;
+            return lRes === rRes;
+        }
+        return user === p.answer; // So sánh dấu đơn thuần
     }
+
+    // 3. Thẻ số (Sơ đồ chuỗi hoặc Ô trống đơn)
+    if (p.type === 'fill_blank') {
+        if (p.visualType === 'chain') {
+            const userAnswers = p.userAnswer ? JSON.parse(p.userAnswer) : {};
+            const targetAnswers = p.answer || {};
+            const keys = Object.keys(targetAnswers);
+            return keys.length > 0 && keys.every(k => parseInt(userAnswers[k]) === targetAnswers[k]);
+        }
+        return parseInt(user) === p.answer;
+    }
+
+    // 4. Nối kết
     if (p.type === 'connect') {
       const userConnections = p.userAnswer ? JSON.parse(p.userAnswer) : {};
       const targetAnswers = p.answer || {};
       const leftIds = p.visualData?.left?.map((l:any) => l.id) || [];
       return leftIds.length > 0 && leftIds.every((id: string) => parseInt(userConnections[id]) === targetAnswers[id]);
     }
+
+    // 5. Mê cung
     if (p.type === 'maze') {
         const userAnswers = p.userAnswer ? JSON.parse(p.userAnswer) : {};
         const targetAnswers = p.answer || {};
         return Object.keys(targetAnswers).length > 0 && Object.keys(targetAnswers).every(coord => parseInt(userAnswers[coord]) === targetAnswers[coord]);
     }
+
+    // 6. Hình học (Nhận dạng hình)
     if (p.type === 'geometry' && p.visualType === 'identify_shape') {
       const userSelected = p.userAnswer ? JSON.parse(p.userAnswer) : [];
       const targetIds = p.visualData?.shapes?.filter((s: any) => s.type === p.visualData?.targetId).map((s: any) => s.id) || [];
       return targetIds.length === userSelected.length && targetIds.every((id: string) => userSelected.includes(id));
     }
+
+    // 7. Quy luật (Dạng JSON lưu trữ lựa chọn)
+    if (p.type === 'pattern') {
+        const userAnswers = p.userAnswer ? JSON.parse(p.userAnswer) : {};
+        const hiddenIndex = p.visualData?.hiddenIndex;
+        return userAnswers[`idx-${hiddenIndex}`] === p.answer;
+    }
+
+    // 8. Trắc nghiệm
+    if (p.type === 'multiple_choice') {
+        return user === String(p.answer);
+    }
+
+    // 9. Mặc định (Các phép tính đơn lẻ)
     return parseInt(user) === p.answer;
   };
 

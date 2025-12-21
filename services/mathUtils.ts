@@ -36,45 +36,83 @@ export const generateHouseProblems = (count: number): MathProblem[] => {
   return problems;
 };
 
-// --- CÁC HÀM KHÁC GIỮ NGUYÊN TUYỆT ĐỐI ---
+// --- SINH ĐỀ CHO THẺ SỐ (CHỈ TRONG PHẠM VI 0-10) ---
 export const generateChainProblem = (): MathProblem => {
+  // Số nút từ 3 đến 4 để phù hợp màn hình
   const nodesCount = getRandomInt(3, 4);
   const shape = Math.random() > 0.5 ? 'circle' : 'square';
   const nodes: any[] = [];
   const steps: any[] = [];
   const answers: Record<string, number> = {};
-  let currentVal = getRandomInt(2, 8);
+  
+  // Giá trị bắt đầu từ 0-10
+  let currentVal = getRandomInt(0, 10);
   nodes.push({ value: currentVal, isHidden: false, isStarting: true, shape });
+
   for (let i = 0; i < nodesCount - 1; i++) {
     const op = Math.random() > 0.5 ? '+' : '-';
     let stepVal, nextVal;
-    if (op === '+' || currentVal < 2) { stepVal = getRandomInt(1, 10 - currentVal); nextVal = currentVal + stepVal; }
-    else { stepVal = getRandomInt(1, currentVal); nextVal = currentVal - stepVal; }
+
+    if (op === '+') {
+      // Đảm bảo tổng không vượt quá 10
+      stepVal = getRandomInt(0, 10 - currentVal);
+      nextVal = currentVal + stepVal;
+    } else {
+      // Đảm bảo hiệu không nhỏ hơn 0
+      stepVal = getRandomInt(0, currentVal);
+      nextVal = currentVal - stepVal;
+    }
+
     steps.push({ op, val: stepVal });
-    const isHidden = true;
-    nodes.push({ value: nextVal, isHidden, shape });
-    if (isHidden) answers[String(i + 1)] = nextVal;
+    nodes.push({ value: nextVal, isHidden: true, shape });
+    answers[String(i + 1)] = nextVal;
     currentVal = nextVal;
   }
-  return { id: generateId(), type: 'fill_blank', visualType: 'chain', question: "Thực hiện phép tính theo sơ đồ nhé!", visualData: { nodes, steps }, answer: answers, userAnswer: JSON.stringify({}) };
+
+  return { 
+    id: generateId(), 
+    type: 'fill_blank', 
+    visualType: 'chain', 
+    question: "Thực hiện phép tính theo sơ đồ nhé!", 
+    visualData: { nodes, steps }, 
+    answer: answers, 
+    userAnswer: JSON.stringify({}) 
+  };
 };
 
 export const generateFillBlankProblems = (count: number): MathProblem[] => {
   const problems: MathProblem[] = [];
   for (let i = 0; i < count; i++) {
-    if (Math.random() < 0.4) problems.push(generateChainProblem());
-    else {
+    if (Math.random() < 0.4) {
+      problems.push(generateChainProblem());
+    } else {
       const op = Math.random() > 0.5 ? '+' : '-';
       let n1, n2, res;
-      if (op === '+') { n1 = getRandomInt(1, 9); n2 = getRandomInt(0, 10 - n1); res = n1 + n2; }
-      else { n1 = getRandomInt(1, 10); n2 = getRandomInt(0, n1); res = n1 - n2; }
+      if (op === '+') {
+        n1 = getRandomInt(0, 10);
+        n2 = getRandomInt(0, 10 - n1); // n1 + n2 <= 10
+        res = n1 + n2;
+      } else {
+        n1 = getRandomInt(0, 10);
+        n2 = getRandomInt(0, n1); // n1 - n2 >= 0
+        res = n1 - n2;
+      }
       const hideIdx = getRandomInt(0, 2);
-      problems.push({ id: generateId(), type: 'fill_blank', numbers: [n1, n2], visualData: res, answer: hideIdx === 0 ? n1 : hideIdx === 1 ? n2 : res, operators: [op], options: [hideIdx] });
+      problems.push({ 
+        id: generateId(), 
+        type: 'fill_blank', 
+        numbers: [n1, n2], 
+        visualData: res, 
+        answer: hideIdx === 0 ? n1 : hideIdx === 1 ? n2 : res, 
+        operators: [op], 
+        options: [hideIdx] 
+      });
     }
   }
   return problems;
 };
 
+// --- CÁC HÀM KHÁC GIỮ NGUYÊN TUYỆT ĐỐI ---
 export const generateExpressionProblems = (count: number): MathProblem[] => {
   const problems: MathProblem[] = [];
   for (let i = 0; i < count; i++) {
