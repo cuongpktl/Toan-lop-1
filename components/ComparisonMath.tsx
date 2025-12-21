@@ -24,8 +24,17 @@ const ComparisonMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
   const isMissingNumber = problem.visualType === 'missing_number';
   const { sign: targetSign = '', hideIdx = -1 } = problem.visualData || {};
 
-  const leftTarget = ops[0] === '+' ? nums[0] + nums[1] : nums[0] - nums[1];
-  const rightTarget = ops[1] === '+' ? nums[2] + nums[3] : nums[2] - nums[3];
+  // Tính toán số hạng hiện tại dựa trên input của người dùng (nếu đang ở chế độ điền số)
+  const currentNums = [...nums];
+  if (isMissingNumber && userAns !== '') {
+    const val = parseInt(userAns);
+    if (!isNaN(val)) {
+      currentNums[hideIdx] = val;
+    }
+  }
+
+  const leftTarget = ops[0] === '+' ? currentNums[0] + currentNums[1] : currentNums[0] - currentNums[1];
+  const rightTarget = ops[1] === '+' ? currentNums[2] + currentNums[3] : currentNums[2] - currentNums[3];
 
   const isLeftCorrect = leftIntermediate !== '' && parseInt(leftIntermediate) === leftTarget;
   const isRightCorrect = rightIntermediate !== '' && parseInt(rightIntermediate) === rightTarget;
@@ -65,10 +74,10 @@ const ComparisonMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
   let isCorrect = false;
   if (showResult) {
     if (isMissingNumber) {
-        const currentNums = [...nums];
-        try { currentNums[hideIdx] = parseInt(userAns); } catch(e) {}
-        const lRes = ops[0] === '+' ? currentNums[0] + currentNums[1] : currentNums[0] - currentNums[1];
-        const rRes = ops[1] === '+' ? currentNums[2] + currentNums[3] : currentNums[2] - currentNums[3];
+        const checkNums = [...nums];
+        try { checkNums[hideIdx] = parseInt(userAns); } catch(e) {}
+        const lRes = ops[0] === '+' ? checkNums[0] + checkNums[1] : checkNums[0] - checkNums[1];
+        const rRes = ops[1] === '+' ? checkNums[2] + checkNums[3] : checkNums[2] - checkNums[3];
         
         if (targetSign === '>') isCorrect = lRes > rRes;
         else if (targetSign === '<') isCorrect = lRes < rRes;

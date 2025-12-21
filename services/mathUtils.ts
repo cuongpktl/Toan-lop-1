@@ -20,7 +20,6 @@ const shuffleArray = <T>(array: T[]): T[] => {
 export const generateHouseProblems = (count: number): MathProblem[] => {
   const problems: MathProblem[] = [];
   for (let i = 0; i < count; i++) {
-    // Phạm vi Lớp 1: Tổng trong phạm vi 10
     let sum = getRandomInt(2, 10);
     let p1 = getRandomInt(0, sum);
     let p2 = sum - p1;
@@ -38,14 +37,12 @@ export const generateHouseProblems = (count: number): MathProblem[] => {
 
 // --- SINH ĐỀ CHO THẺ SỐ (CHỈ TRONG PHẠM VI 0-10) ---
 export const generateChainProblem = (): MathProblem => {
-  // Số nút từ 3 đến 4 để phù hợp màn hình
   const nodesCount = getRandomInt(3, 4);
   const shape = Math.random() > 0.5 ? 'circle' : 'square';
   const nodes: any[] = [];
   const steps: any[] = [];
   const answers: Record<string, number> = {};
   
-  // Giá trị bắt đầu từ 0-10
   let currentVal = getRandomInt(0, 10);
   nodes.push({ value: currentVal, isHidden: false, isStarting: true, shape });
 
@@ -54,11 +51,9 @@ export const generateChainProblem = (): MathProblem => {
     let stepVal, nextVal;
 
     if (op === '+') {
-      // Đảm bảo tổng không vượt quá 10
       stepVal = getRandomInt(0, 10 - currentVal);
       nextVal = currentVal + stepVal;
     } else {
-      // Đảm bảo hiệu không nhỏ hơn 0
       stepVal = getRandomInt(0, currentVal);
       nextVal = currentVal - stepVal;
     }
@@ -90,11 +85,11 @@ export const generateFillBlankProblems = (count: number): MathProblem[] => {
       let n1, n2, res;
       if (op === '+') {
         n1 = getRandomInt(0, 10);
-        n2 = getRandomInt(0, 10 - n1); // n1 + n2 <= 10
+        n2 = getRandomInt(0, 10 - n1);
         res = n1 + n2;
       } else {
         n1 = getRandomInt(0, 10);
-        n2 = getRandomInt(0, n1); // n1 - n2 >= 0
+        n2 = getRandomInt(0, n1);
         res = n1 - n2;
       }
       const hideIdx = getRandomInt(0, 2);
@@ -112,7 +107,6 @@ export const generateFillBlankProblems = (count: number): MathProblem[] => {
   return problems;
 };
 
-// --- CÁC HÀM KHÁC GIỮ NGUYÊN TUYỆT ĐỐI ---
 export const generateExpressionProblems = (count: number): MathProblem[] => {
   const problems: MathProblem[] = [];
   for (let i = 0; i < count; i++) {
@@ -342,12 +336,63 @@ export const generateMeasurementProblems = (count: number): MathProblem[] => {
 
 export const generateGeometryProblems = (count: number): MathProblem[] => {
   const problems: MathProblem[] = [];
+  
+  // Các loại hình học cơ bản
+  const SHAPE_DEFS = [
+    { type: 'tri', name: 'hình Tam Giác', d: "M 50 10 L 90 90 L 10 90 Z" },
+    { type: 'sq', name: 'hình Vuông', d: "M 15 15 H 85 V 85 H 15 Z" },
+    { type: 'cir', name: 'hình Tròn', d: "M 50 10 A 40 40 0 1 1 50 90 A 40 40 0 1 1 50 10" },
+    { type: 'rect', name: 'hình Chữ Nhật', d: "M 10 30 H 90 V 70 H 10 Z" }
+  ];
+
+  const COLORS = ["#FFD700", "#4B0082", "#00FF7F", "#FF4500", "#1E90FF", "#FF69B4", "#8B4513"];
+
   for (let i = 0; i < count; i++) {
     if (i % 2 === 0) {
-      const l1 = getRandomInt(2, 3), l2 = getRandomInt(2, 3), l3 = getRandomInt(2, 4);
-      problems.push({ id: generateId(), type: 'geometry', visualType: 'path_length', question: "Tính độ dài đường gấp khúc (trong phạm vi 10) nhé!", visualData: [{ length: l1 }, { length: l2 }, { length: l3 }], answer: l1 + l2 + l3 });
+      // Dạng 1: Đường gấp khúc
+      const l1 = getRandomInt(1, 4), l2 = getRandomInt(1, 3), l3 = getRandomInt(1, 3);
+      problems.push({ 
+        id: generateId(), 
+        type: 'geometry', 
+        visualType: 'path_length', 
+        question: "Tính độ dài đường gấp khúc (trong phạm vi 10) nhé!", 
+        visualData: [{ length: l1 }, { length: l2 }, { length: l3 }], 
+        answer: l1 + l2 + l3 
+      });
     } else {
-      problems.push({ id: generateId(), type: 'geometry', visualType: 'identify_shape', question: "Bé hãy chọn tất cả các hình Tam Giác nhé!", visualData: { targetId: 'tri', shapes: [{ id: '1', type: 'tri', d: "M 50 10 L 90 90 L 10 90 Z", color: "#FFD700" }, { id: '2', type: 'rect', d: "M 10 10 H 90 V 90 H 10 Z", color: "#4B0082" }, { id: '3', type: 'tri', d: "M 10 10 L 90 50 L 10 90 Z", color: "#00FF7F" }, { id: '4', type: 'circle', d: "M 50 10 A 40 40 0 1 1 50 90 A 40 40 0 1 1 50 10", color: "#FF4500" }] }, answer: 2 });
+      // Dạng 2: Nhận dạng hình học (Đã cập nhật đa dạng hơn)
+      const target = SHAPE_DEFS[getRandomInt(0, SHAPE_DEFS.length - 1)];
+      const displayShapes = [];
+      
+      // Tạo ra 8 hình, trong đó có ít nhất 2 hình là mục tiêu
+      for (let j = 0; j < 8; j++) {
+        let chosen;
+        // Đảm bảo 3 hình đầu tiên luôn có ít nhất 1-2 hình đúng
+        if (j < 3) {
+           chosen = Math.random() > 0.5 ? target : SHAPE_DEFS[getRandomInt(0, SHAPE_DEFS.length - 1)];
+        } else {
+           chosen = SHAPE_DEFS[getRandomInt(0, SHAPE_DEFS.length - 1)];
+        }
+        
+        displayShapes.push({
+          id: generateId(),
+          type: chosen.type,
+          d: chosen.d,
+          color: COLORS[getRandomInt(0, COLORS.length - 1)]
+        });
+      }
+
+      problems.push({ 
+        id: generateId(), 
+        type: 'geometry', 
+        visualType: 'identify_shape', 
+        question: `Bé hãy chọn tất cả các ${target.name} nhé!`, 
+        visualData: { 
+          targetId: target.type, 
+          shapes: shuffleArray(displayShapes) 
+        }, 
+        answer: displayShapes.filter(s => s.type === target.type).length 
+      });
     }
   }
   return problems;
@@ -403,7 +448,6 @@ export const generatePuzzleProblem = (): MathProblem => {
   };
 };
 
-// --- SINH BÀI TOÁN HỖN HỢP (LUYỆN TẬP) ---
 export const generateMixedProblems = (count: number): MathProblem[] => {
   const problems: MathProblem[] = [];
   const generators = [
@@ -425,7 +469,6 @@ export const generateMixedProblems = (count: number): MathProblem[] => {
   return problems;
 };
 
-// --- SINH DỮ LIỆU GAME GHÉP HÌNH (MATCHING GAME) ---
 export const generateMatchingGameData = (count: number) => {
   const birds: MathProblem[] = [];
   const houses: { id: string; value: number }[] = [];
@@ -475,7 +518,6 @@ export const generateMatchingGameData = (count: number) => {
   return { birds, houses: shuffleArray(houses) };
 };
 
-// CÁC HÌNH LIB CHO CHALLENGE
 const CHALLENGE_SHAPES = {
     square: { d: "M 10 10 H 40 V 40 H 10 Z", color: "#fbbf24" },
     triangle: { d: "M 25 10 L 40 40 L 10 40 Z", color: "#60a5fa" },
