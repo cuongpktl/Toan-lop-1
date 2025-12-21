@@ -21,8 +21,8 @@ const MeasurementMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     onUpdate(val);
-    if (val.length >= String(problem.answer).length) {
-      setTimeout(() => focusNextEmptyInput(e.target), 400);
+    if (val !== '') {
+      setTimeout(() => focusNextEmptyInput(e.target), 300);
     }
   };
 
@@ -31,139 +31,152 @@ const MeasurementMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => 
       <input 
         type="number" 
         inputMode="numeric"
+        data-priority="2"
         value={problem.userAnswer || ''}
         onChange={handleInputChange}
         disabled={showResult}
-        className={`w-20 text-center text-2xl font-black p-2 rounded-2xl border-4 outline-none transition-all ${inputColor}`}
+        className="w-24 text-center text-3xl font-black p-3 rounded-2xl border-4 outline-none transition-all shadow-sm"
+        style={{ 
+          borderColor: isCorrect ? '#86efac' : isWrong ? '#fca5a5' : '#d1d5db',
+          backgroundColor: isCorrect ? '#f0fdf4' : isWrong ? '#fef2f2' : 'white',
+          color: isCorrect ? '#16a34a' : isWrong ? '#dc2626' : '#1f2937'
+        }}
         placeholder="?"
       />
-      <span className="text-lg font-black text-gray-400">{unit}</span>
+      <span className="text-2xl font-black text-gray-500">{unit}</span>
       {isWrong && (
-        <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-red-500 text-white px-3 py-1 rounded-full text-[10px] font-black shadow-lg z-20 whitespace-nowrap animate-bounce-short">
+        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-red-500 text-white px-4 py-1.5 rounded-full text-sm font-black shadow-lg z-20 whitespace-nowrap">
           Đúng là: {problem.answer} {unit}
         </div>
       )}
     </div>
   );
 
-  // --- Render logic giữ nguyên cho Balance, Spring, Beaker ---
+  // 1. CÂN ĐĨA (CON CÁ) - ĐÃ TĂNG KÍCH THƯỚC
   if (problem.visualType === 'balance') {
     const weights = Array.isArray(problem.visualData) ? problem.visualData : [];
     return (
-      <div className="bg-orange-50 p-4 sm:p-6 rounded-[32px] border-4 border-orange-100 flex flex-col items-center shadow-sm animate-fadeIn w-full overflow-hidden">
-        <h3 className="text-gray-700 font-black mb-6 w-full text-center text-sm sm:text-base">Con cá nặng bao nhiêu kg?</h3>
-        <div className="relative w-full max-w-[450px] h-56 mt-2">
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[20px] sm:border-l-[30px] border-l-transparent border-r-[20px] sm:border-r-[30px] border-r-transparent border-b-[50px] sm:border-b-[60px] border-b-gray-400"></div>
-          <div className="absolute bottom-[50px] sm:bottom-[60px] left-0 w-full h-2 sm:h-3 bg-gray-600 rounded-full shadow-sm"></div>
-          <div className="absolute bottom-[53px] sm:bottom-[63px] left-0 w-[48%] h-2 flex flex-col items-center">
-            <div className="absolute bottom-1 w-full flex flex-col items-center">
-               <svg viewBox="0 0 120 70" className="w-full max-w-[120px] h-auto drop-shadow-lg overflow-visible">
-                  <path d="M10 35 L 35 15 L 35 55 Z" fill="#3B82F6" stroke="#1D4ED8" strokeWidth="1" />
-                  <path d="M35 35 Q 35 0 75 0 Q 115 0 115 35 Q 115 70 75 70 Q 35 70 35 35 Z" fill="#60A5FA" stroke="#1D4ED8" strokeWidth="1" />
-                  <path d="M60 10 Q 75 -10 90 10" fill="#2563EB" stroke="#1D4ED8" strokeWidth="1" />
-                  <path d="M65 60 Q 75 75 85 60" fill="#2563EB" stroke="#1D4ED8" strokeWidth="1" />
-                  <circle cx="100" cy="25" r="5" fill="white" />
-                  <circle cx="102" cy="25" r="2.5" fill="black" />
-               </svg>
-               <div className="w-[85%] h-2 bg-gray-300 rounded-full mt-1"></div>
-            </div>
-          </div>
-          <div className="absolute bottom-[53px] sm:bottom-[63px] right-0 w-[48%] h-2 flex flex-col items-center">
-            <div className="absolute bottom-1 w-full flex flex-col items-center gap-1">
-              <div className="flex flex-wrap justify-center items-end gap-1 w-full">
+      <div className="bg-orange-50 p-6 sm:p-10 rounded-[32px] border-4 border-orange-100 flex flex-col items-center shadow-sm animate-fadeIn w-full">
+        <h3 className="text-gray-700 text-lg sm:text-xl font-black mb-8 w-full text-center">Con cá nặng bao nhiêu kg?</h3>
+        <div className="relative w-full max-w-[500px] h-64 mt-2">
+           {/* Đế cân */}
+           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[40px] border-l-transparent border-r-[40px] border-r-transparent border-b-[80px] border-b-gray-400"></div>
+           {/* Thanh ngang */}
+           <div className="absolute bottom-[80px] left-0 w-full h-4 bg-gray-600 rounded-full shadow-sm"></div>
+           
+           {/* Đĩa bên trái (Cá to hơn) */}
+           <div className="absolute bottom-[84px] left-0 w-[48%] flex flex-col items-center">
+               <span className="text-7xl sm:text-9xl drop-shadow-xl animate-pulse">🐟</span>
+               <div className="w-full h-3 bg-gray-300 rounded-full mt-2 shadow-inner"></div>
+           </div>
+           
+           {/* Đĩa bên phải (Quả cân to hơn) */}
+           <div className="absolute bottom-[84px] right-0 w-[48%] flex flex-col items-center gap-2">
+              <div className="flex flex-wrap justify-center gap-2">
                 {weights.map((w, idx) => (
-                  <div key={idx} className="relative flex flex-col items-center">
-                     <svg viewBox="0 0 45 50" className="w-10 sm:w-14 h-auto drop-shadow-md overflow-visible">
-                        <path d="M15 5 Q 22.5 0 30 5 L 30 15 L 40 15 Q 45 15 45 20 L 45 45 Q 45 50 40 50 L 5 50 Q 0 50 0 45 L 0 20 Q 0 15 5 15 L 15 15 Z" fill="#D97706" stroke="#92400E" strokeWidth="1" />
-                        <text x="22.5" y="38" textAnchor="middle" fill="white" fontSize="15" fontWeight="900">{w}kg</text>
-                     </svg>
+                  <div key={idx} className="bg-orange-600 text-white text-base sm:text-xl font-black px-4 py-2 rounded-xl shadow-md border-b-4 border-orange-800 flex items-center justify-center min-w-[50px]">
+                    {w}kg
                   </div>
                 ))}
               </div>
-              <div className="w-[85%] h-2 bg-gray-300 rounded-full"></div>
-            </div>
-          </div>
+              <div className="w-full h-3 bg-gray-300 rounded-full shadow-inner"></div>
+           </div>
         </div>
-        <div className="mt-8 flex items-center gap-4">
-          {renderInput('kg')}
-        </div>
+        <div className="mt-12">{renderInput('kg')}</div>
       </div>
     );
   }
 
+  // 2. CÂN BÀN / CÂN ĐỒNG HỒ (DƯA HẤU)
   if (problem.visualType === 'spring') {
-    const weight = typeof problem.answer === 'number' ? problem.answer : 0;
-    const rotation = weight * 36;
+    const weightVal = problem.visualData || 0;
+    const rotation = (weightVal / 10) * 360;
+    
     return (
-      <div className="bg-emerald-50 p-6 rounded-[32px] border-4 border-emerald-100 flex flex-col items-center shadow-sm animate-fadeIn">
-        <h3 className="text-gray-700 font-black mb-6 w-full text-center">Quả dưa hấu nặng bao nhiêu kg?</h3>
-        <div className="relative w-56 h-72 flex flex-col items-center">
-          <div className="z-10 w-40 h-32 -mb-2">
-            <svg viewBox="0 0 100 80" className="w-full h-full drop-shadow-xl">
-              <ellipse cx="50" cy="40" rx="45" ry="35" fill="#166534" />
-              <path d="M15 40 Q 50 50 85 40 M 25 20 Q 50 30 75 20 M 25 60 Q 50 50 75 60" stroke="#4ade80" strokeWidth="4" fill="none" opacity="0.3"/>
-            </svg>
-          </div>
-          <div className="w-36 h-4 bg-gray-300 rounded-full border-2 border-gray-400 shadow-inner"></div>
-          <div className="w-8 h-12 bg-gray-400"></div>
-          <div className="relative w-48 h-48 bg-emerald-600 rounded-[40px] border-b-8 border-emerald-800 shadow-2xl flex items-center justify-center">
-            <div className="w-40 h-40 bg-white rounded-full relative border-4 border-emerald-700 shadow-inner flex items-center justify-center">
-              {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
-                <div key={n} className="absolute inset-0 flex flex-col items-center pt-1" style={{ transform: `rotate(${n * 36}deg)` }}>
-                  <div className={`w-1.5 h-3.5 ${n % 5 === 0 ? 'bg-gray-800' : 'bg-gray-500'}`}></div>
-                  <div className="mt-1" style={{ transform: `rotate(-${n * 36}deg)` }}>
-                    <span className="text-[11px] font-black text-gray-600">{n}</span>
-                  </div>
-                </div>
-              ))}
-              <div 
-                className="absolute top-1/2 left-1/2 w-1.5 h-16 bg-red-600 origin-bottom -translate-x-1/2 -translate-y-full rounded-full transition-transform duration-1000 shadow-sm" 
-                style={{ transform: `translate(-50%, -100%) rotate(${rotation}deg)` }}
-              ></div>
-              <div className="w-4 h-4 bg-gray-800 rounded-full z-10 shadow-md border-2 border-gray-400"></div>
-            </div>
-          </div>
+      <div className="bg-emerald-50 p-6 rounded-[32px] border-4 border-emerald-100 flex flex-col items-center shadow-sm w-full">
+        <h3 className="text-gray-700 text-lg sm:text-xl font-black mb-8">Quả dưa hấu nặng bao nhiêu kg?</h3>
+        <div className="relative mb-6 flex flex-col items-center">
+           <div className="text-8xl mb-8 drop-shadow-lg transform hover:scale-110 transition-transform">🍉</div>
+           
+           <div className="relative w-56 h-56 sm:w-64 sm:h-64">
+              {/* Vỏ cân */}
+              <div className="absolute inset-0 bg-emerald-600 rounded-3xl shadow-xl border-b-[12px] border-emerald-800"></div>
+              
+              {/* Mặt đồng hồ */}
+              <div className="absolute inset-5 bg-white rounded-full border-8 border-gray-200 shadow-inner flex items-center justify-center">
+                 <svg viewBox="0 0 100 100" className="w-full h-full p-1 overflow-visible">
+                    {[...Array(10)].map((_, i) => {
+                      const num = i + 1;
+                      const angle = (num * 36) * (Math.PI / 180) - (Math.PI / 2);
+                      const x = 50 + 36 * Math.cos(angle);
+                      const y = 50 + 36 * Math.sin(angle);
+                      const lineX1 = 50 + 40 * Math.cos(angle);
+                      const lineY1 = 50 + 40 * Math.sin(angle);
+                      const lineX2 = 50 + 46 * Math.cos(angle);
+                      const lineY2 = 50 + 46 * Math.sin(angle);
+                      
+                      return (
+                        <g key={num}>
+                          <line x1={lineX1} y1={lineY1} x2={lineX2} y2={lineY2} stroke="#64748b" strokeWidth="2.5" />
+                          <text 
+                            x={x} 
+                            y={y} 
+                            textAnchor="middle" 
+                            dominantBaseline="middle" 
+                            className="font-black text-[12px] fill-gray-800"
+                          >
+                            {num}
+                          </text>
+                        </g>
+                      );
+                    })}
+                    <g style={{ transform: `rotate(${rotation}deg)`, transformOrigin: '50% 50%', transition: 'transform 1s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+                       <path d="M50 50 L50 12" stroke="#ef4444" strokeWidth="4" strokeLinecap="round" />
+                       <path d="M46 25 L50 8 L54 25 Z" fill="#ef4444" />
+                    </g>
+                    <circle cx="50" cy="50" r="5" fill="#1e293b" />
+                 </svg>
+              </div>
+           </div>
         </div>
-        <div className="mt-8">
-          {renderInput('kg')}
-        </div>
+        <div className="mt-6">{renderInput('kg')}</div>
       </div>
     );
   }
 
+  // 3. BÌNH NƯỚC (LÍT) - TĂNG CỠ CHỮ VẠCH CHIA
   if (problem.visualType === 'beaker') {
-    const level = typeof problem.answer === 'number' ? problem.answer : 0;
-    const waterY = 180 - (level * 16);
-    const waterHeight = level * 16;
+    const liquidLevel = (problem.visualData || 0) * 10;
     return (
-      <div className="bg-blue-50 p-6 rounded-[32px] border-4 border-blue-100 flex flex-col items-center shadow-sm animate-fadeIn">
-        <h3 className="text-gray-700 font-black mb-6 w-full text-center">Bình nước chứa bao nhiêu Lít (l)?</h3>
-        <div className="relative w-48 h-64 flex items-center justify-center">
-          <svg width="160" height="220" viewBox="0 0 160 220" className="overflow-visible">
-            <rect x="30" y="10" width="100" height="180" rx="10" fill="white" fillOpacity="0.8" stroke="#cbd5e1" strokeWidth="4" />
-            <rect x="32" y={waterY} width="96" height={waterHeight} rx="2" fill="#60A5FA" />
-            {[0, 2, 4, 6, 8, 10].map(l => (
-                <g key={l}>
-                  <line x1="80" y1={180 - (l * 16)} x2="130" y2={180 - (l * 16)} stroke="#475569" strokeWidth="3" />
-                  <text x="140" y={180 - (l * 16) + 5} className="text-[14px] font-black fill-gray-500">{l}</text>
-                </g>
+      <div className="bg-blue-50 p-6 rounded-[32px] border-4 border-blue-100 flex flex-col items-center shadow-sm w-full">
+        <h3 className="text-gray-700 text-lg sm:text-xl font-black mb-8">Bình nước chứa bao nhiêu Lít (l)?</h3>
+        <div className="relative w-32 h-64 border-x-8 border-b-8 border-blue-200 rounded-b-2xl bg-white/70 mb-10 overflow-hidden shadow-inner">
+            <div 
+              className="absolute bottom-0 left-0 w-full bg-blue-400/70 transition-all duration-1000 border-t-4 border-blue-500"
+              style={{ height: `${liquidLevel}%` }}
+            >
+              <div className="absolute top-0 left-0 w-full h-3 bg-blue-300/40 animate-pulse"></div>
+            </div>
+            {/* Vạch chia với chữ TO HƠN */}
+            {[...Array(10)].map((_, i) => (
+              <div key={i} className="absolute left-0 w-6 h-1 bg-blue-200" style={{ bottom: `${(i+1)*10}%` }}>
+                 <span className="ml-8 text-sm sm:text-base font-black text-blue-500">{i+1}l</span>
+              </div>
             ))}
-          </svg>
         </div>
-        <div className="mt-8 flex items-center gap-2">
-          {renderInput('l')}
-        </div>
+        {renderInput('l')}
       </div>
     );
   }
 
+  // 4. TÍNH TOÁN ĐƠN VỊ (CM, DM...)
   return (
-    <div className={`p-8 rounded-[32px] border-4 flex flex-col items-center justify-center bg-white shadow-sm transition-all ${isCorrect ? 'border-green-400 bg-green-50' : isWrong ? 'border-red-400 bg-red-50' : 'border-pink-100 hover:border-pink-300'}`}>
-        <div className="text-3xl font-black text-gray-700 font-mono flex items-center gap-3 flex-wrap justify-center">
-            <span>{problem.numbers?.[0]}<span className="text-sm font-sans text-gray-400 ml-1">{problem.unit}</span></span>
+    <div className={`p-10 rounded-[40px] border-4 flex flex-col items-center justify-center bg-white shadow-md transition-all ${isCorrect ? 'border-green-400 bg-green-50' : isWrong ? 'border-red-400 bg-red-50' : 'border-pink-100 hover:border-pink-300'}`}>
+        <div className="text-4xl font-black text-gray-700 font-mono flex items-center gap-4 flex-wrap justify-center">
+            <span>{problem.numbers?.[0]}<span className="text-lg font-sans text-gray-400 ml-1 font-bold">{problem.unit}</span></span>
             <span className="text-pink-500">{problem.operators?.[0]}</span>
-            <span>{problem.numbers?.[1]}<span className="text-sm font-sans text-gray-400 ml-1">{problem.unit}</span></span>
-            <span className="text-gray-300">=</span>
+            <span>{problem.numbers?.[1]}<span className="text-lg font-sans text-gray-400 ml-1 font-bold">{problem.unit}</span></span>
+            <span className="text-gray-300 text-3xl">=</span>
             {renderInput(problem.unit || '')}
         </div>
     </div>

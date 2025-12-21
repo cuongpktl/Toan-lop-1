@@ -17,7 +17,7 @@ const VerticalMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
     const val = e.target.value;
     onUpdate(val);
     if (val !== '') {
-      setTimeout(() => focusNextEmptyInput(e.target), 400);
+      setTimeout(() => focusNextEmptyInput(e.target), 200);
     }
   };
 
@@ -45,7 +45,6 @@ const VerticalMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
             : 'text-gray-800 border-gray-200 bg-gray-50 focus:border-blue-400'
         }`}
         placeholder="?"
-        style={{ fontSize: '24px' }}
       />
       
       {isWrong && (

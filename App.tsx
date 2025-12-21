@@ -89,7 +89,6 @@ const TABS: TabItem[] = [
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('practice');
-  // Cấu trúc state mới: Lưu trữ bài toán và trạng thái nộp bài theo tab
   const [tabsData, setTabsData] = useState<Record<string, { problems: MathProblem[], showResult: boolean }>>({});
   
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -97,7 +96,6 @@ const App: React.FC = () => {
   const startX = useRef(0);
   const scrollLeft = useRef(0);
 
-  // Khởi tạo đề bài cho tab hiện tại nếu chưa có
   useEffect(() => {
     if (!tabsData[activeTab]) {
       refreshData(activeTab);
@@ -180,34 +178,13 @@ const App: React.FC = () => {
 
   const isProblemCorrect = (p: MathProblem) => {
     const user = String(p.userAnswer || '').trim();
-    const target = String(p.answer || '').trim();
-
     if (p.type === 'house') {
         const userAns = p.userAnswer ? JSON.parse(p.userAnswer) : {};
         const { sum, p1, p2 } = p.answer;
-        const userRows = [0, 1, 2, 3].map(r => {
-            const v0 = parseInt(userAns[`${r}-0`]);
-            const v1 = parseInt(userAns[`${r}-1`]);
-            const v2 = parseInt(userAns[`${r}-2`]);
-            return [v0, v1, v2];
-        });
-        const checkAddRow = (row: number[]) => {
-            const [v0, v1, v2] = row;
-            if (isNaN(v0) || isNaN(v1) || isNaN(v2)) return false;
-            return (v0 + v1 === v2) && (v2 === sum) && ((v0 === p1 && v1 === p2) || (v0 === p2 && v1 === p1));
-        };
-        const checkSubRow = (row: number[]) => {
-            const [v0, v1, v2] = row;
-            if (isNaN(v0) || isNaN(v1) || isNaN(v2)) return false;
-            return (v0 - v1 === v2) && (v0 === sum) && ((v1 === p1 && v2 === p2) || (v1 === p2 && v2 === p1));
-        };
-        const addRowsStr = userRows.slice(0, 2).map(r => r.join(','));
-        const subRowsStr = userRows.slice(2, 4).map(r => r.join(','));
-        const allAddsValid = checkAddRow(userRows[0]) && checkAddRow(userRows[1]);
-        const allSubsValid = checkSubRow(userRows[2]) && checkSubRow(userRows[3]);
-        const addsUnique = p1 === p2 || addRowsStr[0] !== addRowsStr[1];
-        const subsUnique = p1 === p2 || subRowsStr[0] !== subRowsStr[1];
-        return allAddsValid && allSubsValid && addsUnique && subsUnique;
+        const userRows = [0, 1, 2, 3].map(r => [parseInt(userAns[`${r}-0`]), parseInt(userAns[`${r}-1`]), parseInt(userAns[`${r}-2`])]);
+        const checkAdd = (r: number[]) => !r.some(isNaN) && r[0]+r[1]===r[2] && r[2]===sum && ((r[0]===p1 && r[1]===p2)||(r[0]===p2 && r[1]===p1));
+        const checkSub = (r: number[]) => !r.some(isNaN) && r[0]-r[1]===r[2] && r[0]===sum && ((r[1]===p1 && r[2]===p2)||(r[1]===p2 && r[2]===p1));
+        return checkAdd(userRows[0]) && checkAdd(userRows[1]) && checkSub(userRows[2]) && checkSub(userRows[3]);
     }
     if (p.type === 'comparison' && p.visualType === 'missing_number') {
         if (!user) return false;
@@ -226,69 +203,26 @@ const App: React.FC = () => {
       const userConnections = p.userAnswer ? JSON.parse(p.userAnswer) : {};
       const targetAnswers = p.answer || {};
       const leftIds = p.visualData?.left?.map((l:any) => l.id) || [];
-      if (Object.keys(userConnections).length === 0) return false;
-      return leftIds.every((id: string) => parseInt(userConnections[id]) === targetAnswers[id]);
+      return leftIds.length > 0 && leftIds.every((id: string) => parseInt(userConnections[id]) === targetAnswers[id]);
     }
     if (p.type === 'maze') {
         const userAnswers = p.userAnswer ? JSON.parse(p.userAnswer) : {};
         const targetAnswers = p.answer || {};
-        const targetKeys = Object.keys(targetAnswers);
-        if (targetKeys.length === 0) return false;
-        return targetKeys.every(coord => parseInt(userAnswers[coord]) === targetAnswers[coord]);
-    }
-    if (p.visualType === 'chain') {
-        const userAnswers = p.userAnswer ? JSON.parse(p.userAnswer) : {};
-        const targetAnswers = p.answer || {};
-        const targetKeys = Object.keys(targetAnswers);
-        if (targetKeys.length === 0) return false;
-        return targetKeys.every(idx => parseInt(userAnswers[idx]) === targetAnswers[idx]);
-    }
-    if (p.type === 'coloring') {
-        const userData = p.userAnswer ? JSON.parse(p.userAnswer) : { colors: {}, results: {} };
-        const userColors = userData.colors || {};
-        const userResults = userData.results || {};
-        const cells = p.visualData?.cells || [];
-        if (Object.keys(userColors).length === 0 && Object.keys(userResults).length === 0) return false;
-        return cells.every((cell: any) => {
-           const colorCorrect = userColors[cell.id] === cell.targetColor;
-           const resultCorrect = parseInt(userResults[cell.id]) === cell.targetValue;
-           return colorCorrect && resultCorrect;
-        });
+        return Object.keys(targetAnswers).length > 0 && Object.keys(targetAnswers).every(coord => parseInt(userAnswers[coord]) === targetAnswers[coord]);
     }
     if (p.type === 'geometry' && p.visualType === 'identify_shape') {
       const userSelected = p.userAnswer ? JSON.parse(p.userAnswer) : [];
       const targetIds = p.visualData?.shapes?.filter((s: any) => s.type === p.visualData?.targetId).map((s: any) => s.id) || [];
       return targetIds.length === userSelected.length && targetIds.every((id: string) => userSelected.includes(id));
     }
-    if (p.type === 'puzzle') {
-      const placedPieces = p.userAnswer ? JSON.parse(p.userAnswer) : {};
-      const targets = (p.answer as any[]) || [];
-      if (Object.keys(placedPieces).length !== targets.length) return false;
-      return targets.every(t => {
-          const placed = placedPieces[t.id];
-          return placed && (placed.rotation % 360) === (t.targetRot % 360);
-      });
-    }
-    if (p.visualType === 'double_op') {
-      const userOps = p.userAnswer ? JSON.parse(p.userAnswer) : ['', ''];
-      const targetOps = p.answer ? JSON.parse(p.answer) : ['', ''];
-      return userOps.every((op: string, i: number) => op === targetOps[i]);
-    }
-    if (typeof p.answer === 'number') return parseInt(user) === p.answer;
-    if (typeof p.answer === 'string') return user.toLowerCase() === target.toLowerCase();
     return parseInt(user) === p.answer;
   };
 
   const checkResults = () => {
     if (showResult) {
-      // Nhấn lần 2 để reset trạng thái nộp bài (làm lại cùng đề)
-      setTabsData(prev => ({
-        ...prev,
-        [activeTab]: { ...prev[activeTab], showResult: false }
-      }));
+      setTabsData(prev => ({ ...prev, [activeTab]: { ...prev[activeTab], showResult: false } }));
       return;
     }
-    
     const correctCount = problems.filter(isProblemCorrect).length;
     if (correctCount === problems.length && problems.length > 0) {
       audioService.play('success');
@@ -296,11 +230,7 @@ const App: React.FC = () => {
     } else {
       audioService.play(correctCount > problems.length / 2 ? 'correct' : 'wrong');
     }
-
-    setTabsData(prev => ({
-      ...prev,
-      [activeTab]: { ...prev[activeTab], showResult: true }
-    }));
+    setTabsData(prev => ({ ...prev, [activeTab]: { ...prev[activeTab], showResult: true } }));
   };
 
   const scoreCount = problems.filter(isProblemCorrect).length;
@@ -314,9 +244,9 @@ const App: React.FC = () => {
     const isFullWidth = activeTab === 'challenge' || activeTab === 'puzzle' || activeTab === 'coloring' || activeTab === 'maze' || activeTab === 'connect';
     return (
       <div className="max-w-4xl mx-auto animate-fadeIn px-1 sm:px-0 relative">
-        <div className={`flex flex-col gap-6 sm:gap-12`}>
+        <div className="flex flex-col gap-6 sm:gap-12">
             {problems.map((p, index) => (
-                <div key={p.id} className="relative pt-6 sm:pt-10">
+                <div key={p.id} data-problem-block="true" className="relative pt-6 sm:pt-10">
                     <div className="absolute top-0 left-0 bg-blue-600 text-white px-4 py-1.5 rounded-br-2xl rounded-tl-xl font-black text-[10px] sm:text-sm shadow-md z-10 flex items-center gap-2">
                         <span className="opacity-70">#</span> Câu {index + 1}
                     </div>
@@ -379,7 +309,7 @@ const App: React.FC = () => {
                     <h1 className="text-lg md:text-2xl font-black text-blue-600 uppercase tracking-tighter whitespace-nowrap">Toán lớp 1</h1>
                     <span className="sm:ml-2 text-[8px] md:text-xs font-black text-gray-500 normal-case italic">Quang Minh 1A8</span>
                 </div>
-                {showResult && problems.length > 0 && (
+                {showResult && (
                   <div className="animate-bounce-short">
                     <div className="w-14 h-14 sm:w-24 sm:h-24 bg-white border-2 sm:border-4 border-blue-600 rounded-full shadow-xl flex flex-col items-center justify-center">
                       <span className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase leading-none">Điểm</span>

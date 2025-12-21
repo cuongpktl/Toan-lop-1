@@ -1,53 +1,70 @@
 
 export const focusNextEmptyInput = (currentEl?: HTMLElement) => {
-  // Tìm tất cả các input hợp lệ
+  // 1. Lấy toàn bộ input đang hiển thị trên Tab hiện tại
   const allInputs = Array.from(
     document.querySelectorAll('input[type="number"]:not(:disabled), input[type="text"]:not(:disabled)')
   ) as HTMLInputElement[];
 
-  if (allInputs.length === 0) return;
+  const visibleInputs = allInputs.filter(input => {
+    return input.offsetWidth > 0 || input.offsetHeight > 0 || input.offsetParent !== null;
+  });
 
-  // 1. Tìm tất cả ô trống
-  const emptyInputs = allInputs.filter(input => !input.value);
+  if (visibleInputs.length === 0) return;
 
-  if (emptyInputs.length === 0) {
-    // Nếu tất cả đã điền, focus vào nút "Nộp Bài"
-    const submitBtn = document.querySelector('button.bg-blue-600') as HTMLButtonElement;
-    submitBtn?.focus();
+  // 2. Nếu không có ô hiện tại, focus vào ô trống đầu tiên theo logic P1 -> P2
+  if (!currentEl) {
+    const firstP1 = visibleInputs.find(i => !i.value && i.getAttribute('data-priority') === '1');
+    const firstP2 = visibleInputs.find(i => !i.value && i.getAttribute('data-priority') === '2');
+    (firstP1 || firstP2 || visibleInputs.find(i => !i.value))?.focus();
     return;
   }
 
-  // 2. Logic ưu tiên: Tìm ô có data-priority thấp nhất (1 là cao nhất)
-  // Sắp xếp các ô trống theo thứ tự: Priority -> Thứ tự xuất hiện trong DOM
-  const sortedEmpty = [...emptyInputs].sort((a, b) => {
-    const prioA = parseInt(a.getAttribute('data-priority') || '99');
-    const prioB = parseInt(b.getAttribute('data-priority') || '99');
+  // 3. Tìm khối bài tập chứa ô hiện tại
+  const currentBlock = currentEl.closest('[data-problem-block="true"]');
+  
+  if (currentBlock) {
+    const blockInputs = Array.from(currentBlock.querySelectorAll('input[type="number"]:not(:disabled), input[type="text"]:not(:disabled)')) as HTMLInputElement[];
     
-    if (prioA !== prioB) return prioA - prioB;
-    
-    // Nếu cùng priority, giữ nguyên thứ tự DOM (so sánh vị trí trong mảng allInputs ban đầu)
-    return allInputs.indexOf(a) - allInputs.indexOf(b);
-  });
-
-  // 3. Chọn ô tiếp theo:
-  // Nếu đang ở một ô, ưu tiên tìm ô "tiếp theo" trong danh sách đã sắp xếp
-  let nextToFocus: HTMLInputElement | null = null;
-  if (currentEl) {
-    const currentIndex = sortedEmpty.indexOf(currentEl as HTMLInputElement);
-    // Nếu còn ô phía sau trong danh sách đã sort, nhảy tới đó
-    if (currentIndex !== -1 && currentIndex < sortedEmpty.length - 1) {
-      nextToFocus = sortedEmpty[currentIndex + 1];
-    } else {
-      // Nếu là ô cuối của danh sách sort, quay lại ô đầu tiên (nếu còn trống)
-      nextToFocus = sortedEmpty[0];
+    // Tìm ô P1 trống trong khối này
+    const emptyP1InBlock = blockInputs.find(i => !i.value && i.getAttribute('data-priority') === '1');
+    if (emptyP1InBlock) {
+      emptyP1InBlock.focus();
+      return;
     }
-  } else {
-    nextToFocus = sortedEmpty[0];
+
+    // Nếu P1 đã hết, tìm ô P2 trống trong khối này
+    const emptyP2InBlock = blockInputs.find(i => !i.value && i.getAttribute('data-priority') === '2');
+    if (emptyP2InBlock) {
+      emptyP2InBlock.focus();
+      return;
+    }
   }
 
-  if (nextToFocus) {
-    nextToFocus.focus();
-    // Hiệu ứng cuộn mượt đến ô được chọn nếu nó nằm ngoài màn hình
-    nextToFocus.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  // 4. Nếu khối hiện tại đã hoàn thành, tìm sang các khối tiếp theo
+  // Tìm tất cả ô trống trên trang
+  const allEmpty = visibleInputs.filter(i => !i.value);
+  if (allEmpty.length > 0) {
+    // Sắp xếp các ô trống còn lại: Ưu tiên theo thứ tự xuất hiện của Khối, trong khối ưu tiên P1 -> P2
+    const nextToFocus = allEmpty.sort((a, b) => {
+      const blockA = a.closest('[data-problem-block="true"]');
+      const blockB = b.closest('[data-problem-block="true"]');
+      
+      if (blockA !== blockB) {
+        return visibleInputs.indexOf(a) - visibleInputs.indexOf(b);
+      }
+      
+      const prioA = parseInt(a.getAttribute('data-priority') || '2');
+      const prioB = parseInt(b.getAttribute('data-priority') || '2');
+      return prioA - prioB;
+    })[0];
+
+    if (nextToFocus) {
+      nextToFocus.focus();
+      nextToFocus.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  } else {
+    // 5. Nếu tất cả đã đầy, focus vào nút "Nộp Bài"
+    const submitBtn = document.querySelector('button.bg-blue-600') as HTMLButtonElement;
+    submitBtn?.focus();
   }
 };

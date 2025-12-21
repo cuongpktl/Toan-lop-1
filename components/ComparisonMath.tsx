@@ -16,6 +16,7 @@ const ComparisonMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
   
   const rightHintRef = useRef<HTMLInputElement>(null);
   const leftHintRef = useRef<HTMLInputElement>(null);
+  const signInputRef = useRef<HTMLInputElement>(null);
 
   const nums = problem.numbers || [0, 0, 0, 0];
   const ops = problem.operators || ['+', '+'];
@@ -48,8 +49,8 @@ const ComparisonMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
     if (showResult || isMissingNumber) return;
     onUpdate(val);
     setShowSelector(false);
-    // Khi chọn dấu xong, tìm ô trống tiếp theo (có thể là bài toán tiếp theo)
-    setTimeout(() => focusNextEmptyInput(), 200);
+    // Khi chọn dấu xong, hệ thống sẽ tự tìm ô trống tiếp theo của câu sau
+    setTimeout(() => focusNextEmptyInput(signInputRef.current || undefined), 200);
   };
 
   const handleNumberInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,7 +66,7 @@ const ComparisonMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
   if (showResult) {
     if (isMissingNumber) {
         const currentNums = [...nums];
-        currentNums[hideIdx] = parseInt(userAns);
+        try { currentNums[hideIdx] = parseInt(userAns); } catch(e) {}
         const lRes = ops[0] === '+' ? currentNums[0] + currentNums[1] : currentNums[0] - currentNums[1];
         const rRes = ops[1] === '+' ? currentNums[2] + currentNums[3] : currentNums[2] - currentNums[3];
         
@@ -155,30 +156,37 @@ const ComparisonMath: React.FC<Props> = ({ problem, onUpdate, showResult }) => {
                 {targetSign}
               </div>
             ) : (
-              <button 
+              <div className="relative">
+                <input
+                  ref={signInputRef}
+                  type="text"
+                  readOnly
+                  data-priority="2"
+                  value={userAns || ''}
+                  placeholder="?"
                   onClick={() => !showResult && setShowSelector(!showSelector)}
-                  className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full border-4 flex items-center justify-center text-3xl font-black transition-all shadow-md z-10 relative
-                      ${userAns ? 'text-indigo-600 border-indigo-500 bg-white' : 'text-gray-300 border-gray-100 bg-gray-50'}
+                  onFocus={() => !showResult && setShowSelector(true)}
+                  className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full border-4 flex items-center justify-center text-3xl font-black transition-all shadow-md z-10 text-center cursor-pointer outline-none
+                      ${userAns ? 'text-indigo-600 border-indigo-500 bg-white' : 'text-gray-300 border-gray-100 bg-gray-50 placeholder:text-gray-300'}
                       ${isCorrect ? 'border-green-500 text-green-600' : ''}
                       ${isWrong ? 'border-red-500 text-red-600 animate-shake' : ''}
-                      ${!showResult && !userAns ? 'hover:border-indigo-300 animate-pulse' : ''}
+                      ${!showResult && !userAns ? 'hover:border-indigo-300 animate-pulse focus:ring-4 focus:ring-indigo-100' : ''}
                   `}
-              >
-                  {userAns || '?'}
-              </button>
-            )}
-            {showSelector && !showResult && !isMissingNumber && (
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 bg-white border-4 border-indigo-200 rounded-[24px] shadow-2xl flex p-2 gap-2 z-50 animate-fadeIn overflow-hidden">
-                    {SYMBOLS.map(sym => (
-                        <button 
-                            key={sym} 
-                            onClick={() => handleSelectSign(sym)}
-                            className="w-12 h-12 flex items-center justify-center text-2xl font-black text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors active:scale-90"
-                        >
-                            {sym}
-                        </button>
-                    ))}
-                </div>
+                />
+                {showSelector && !showResult && (
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 bg-white border-4 border-indigo-200 rounded-[24px] shadow-2xl flex p-2 gap-2 z-50 animate-fadeIn overflow-hidden">
+                        {SYMBOLS.map(sym => (
+                            <button 
+                                key={sym} 
+                                onClick={() => handleSelectSign(sym)}
+                                className="w-12 h-12 flex items-center justify-center text-2xl font-black text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors active:scale-90"
+                            >
+                                {sym}
+                            </button>
+                        ))}
+                    </div>
+                )}
+              </div>
             )}
         </div>
         {renderSide(nums[2], nums[3], ops[1], false)}
