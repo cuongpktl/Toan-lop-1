@@ -226,11 +226,30 @@ const App: React.FC = () => {
       return leftIds.length > 0 && leftIds.every((id: string) => parseInt(userConnections[id]) === targetAnswers[id]);
     }
 
-    // 5. Mê cung
+    // 5. Mê cung (Chấm điểm linh hoạt theo từng đoạn phép tính)
     if (p.type === 'maze') {
         const userAnswers = p.userAnswer ? JSON.parse(p.userAnswer) : {};
-        const targetAnswers = p.answer || {};
-        return Object.keys(targetAnswers).length > 0 && Object.keys(targetAnswers).every(coord => parseInt(userAnswers[coord]) === targetAnswers[coord]);
+        const { grid = {}, segments = [] } = p.visualData || {};
+        
+        // Kiểm tra xem tất cả các đoạn có đúng phép toán không
+        return segments.length > 0 && segments.every((seg: any) => {
+          const getVal = (coord: string) => {
+            const cell = grid[coord];
+            if (cell.isStatic) return cell.value;
+            const uVal = userAnswers[coord];
+            return uVal === "" || uVal === undefined ? NaN : parseInt(uVal);
+          };
+
+          const vStart = getVal(seg.start);
+          const vMiddle = getVal(seg.middle);
+          const vEnd = getVal(seg.end);
+
+          if (isNaN(vStart) || isNaN(vMiddle) || isNaN(vEnd)) return false;
+          
+          return seg.op === '+' 
+            ? vStart + vMiddle === vEnd 
+            : vStart - vMiddle === vEnd;
+        });
     }
 
     // 6. Hình học (Nhận dạng hình)

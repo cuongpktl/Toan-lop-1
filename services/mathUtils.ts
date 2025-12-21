@@ -208,37 +208,66 @@ export const generateConnectProblems = (count: number): MathProblem[] => {
 export const generateMazeProblems = (count: number): MathProblem[] => {
   const problems: MathProblem[] = [];
   for (let p = 0; p < count; p++) {
-    const grid: Record<string, any> = {}; const answers: Record<string, number> = {}; let currR = 0, currC = 0, lastValue = getRandomInt(2, 5);
+    const grid: Record<string, any> = {}; 
+    const segments: any[] = []; // Lưu trữ các đoạn để chấm điểm linh hoạt
+    let currR = 0, currC = 0, lastValue = getRandomInt(2, 5);
     grid[`${currR},${currC}`] = { type: 'number', value: lastValue, isStatic: true };
-    for (let i = 0; i < 6; i++) {
-      const isHorizontal = i % 2 === 0, op = Math.random() > 0.5 ? '+' : '-';
+    
+    for (let i = 0; i < 4; i++) {
+      const isHorizontal = i % 2 === 0;
+      let op = Math.random() > 0.5 ? '+' : '-';
+      
+      if (lastValue >= 10) op = '-';
+      if (lastValue <= 0) op = '+';
+
       let n2, res;
-      if (op === '+') { n2 = getRandomInt(1, 10 - lastValue); res = lastValue + n2; }
-      else { n2 = getRandomInt(1, lastValue); res = lastValue - n2; }
+      if (op === '+') {
+        n2 = getRandomInt(1, Math.max(1, 10 - lastValue));
+        res = lastValue + n2;
+      } else {
+        n2 = getRandomInt(1, Math.max(1, lastValue));
+        res = lastValue - n2;
+      }
+
+      const segment = {
+        start: `${currR},${currC}`,
+        op: op,
+        middle: "",
+        end: ""
+      };
+
       if (isHorizontal) {
         grid[`${currR},${currC + 1}`] = { type: 'op', value: op };
         const hideN2 = Math.random() > 0.5;
         grid[`${currR},${currC + 2}`] = { type: 'number', value: n2, isStatic: !hideN2 };
-        if (hideN2) answers[`${currR},${currC + 2}`] = n2;
+        segment.middle = `${currR},${currC + 2}`;
         grid[`${currR},${currC + 3}`] = { type: 'op', value: '=' };
         const hideRes = !hideN2 || Math.random() > 0.5;
         grid[`${currR},${currC + 4}`] = { type: 'number', value: res, isStatic: !hideRes };
-        if (hideRes) answers[`${currR},${currC + 4}`] = res;
+        segment.end = `${currR},${currC + 4}`;
         currC += 4;
       } else {
         grid[`${currR + 1},${currC}`] = { type: 'op', value: op };
         const hideN2 = Math.random() > 0.5;
         grid[`${currR + 2},${currC}`] = { type: 'number', value: n2, isStatic: !hideN2 };
-        if (hideN2) answers[`${currR + 2},${currC}`] = n2;
+        segment.middle = `${currR + 2},${currC}`;
         grid[`${currR + 3},${currC}`] = { type: 'op', value: '=' };
         const hideRes = !hideN2 || Math.random() > 0.5;
         grid[`${currR + 4},${currC}`] = { type: 'number', value: res, isStatic: !hideRes };
-        if (hideRes) answers[`${currR + 4},${currC}`] = res;
+        segment.end = `${currR + 4},${currC}`;
         currR += 4;
       }
+      segments.push(segment);
       lastValue = res;
     }
-    problems.push({ id: generateId(), type: 'maze', question: "Bé hãy tính theo mũi tên để điền số còn thiếu (0-10) qua 6 bước nhé!", visualData: { grid }, answer: answers, userAnswer: JSON.stringify({}) });
+    problems.push({ 
+      id: generateId(), 
+      type: 'maze', 
+      question: "Bé hãy tính theo mũi tên để điền số còn thiếu (0-10) qua 4 bước nhé!", 
+      visualData: { grid, segments }, 
+      answer: null, // Sẽ kiểm tra linh hoạt
+      userAnswer: JSON.stringify({}) 
+    });
   }
   return problems;
 };
